@@ -7,7 +7,7 @@ import {
   SlidersHorizontal, Terminal, Zap,
 } from 'lucide-react';
 import { Link, Route, Switch, useLocation, useParams, Router as WouterRouter } from 'wouter';
-import brandLockup from '@assets/image_1790627116172.png';
+import brandLockup from '@assets/image_1790627211103.png';
 import {
   getGetAssessmentQueryKey, getGetDashboardQueryKey, getGetFindingQueryKey, getGetWorkspaceQueryKey,
   getHealthCheckQueryKey, getListAssessmentsQueryKey, getListEvidenceQueryKey, getListFindingsQueryKey,
