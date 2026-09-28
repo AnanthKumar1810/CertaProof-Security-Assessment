@@ -7,6 +7,7 @@ import {
   SlidersHorizontal, Terminal, Zap,
 } from 'lucide-react';
 import { Link, Route, Switch, useLocation, useParams, Router as WouterRouter } from 'wouter';
+import brandLockup from '@assets/image_1790627116172.png';
 import {
   getGetAssessmentQueryKey, getGetDashboardQueryKey, getGetFindingQueryKey, getGetWorkspaceQueryKey,
   getHealthCheckQueryKey, getListAssessmentsQueryKey, getListEvidenceQueryKey, getListFindingsQueryKey,
@@ -50,11 +51,9 @@ const navGroups = [
 
 function Shell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
-  const workspace = useGetWorkspace({ query: { queryKey: getGetWorkspaceQueryKey() } });
-  const product = workspace.data?.product ?? 'CertaProof';
   return <div className="app-shell">
     <aside className="sidebar">
-      <Link href="/" className="brand" data-testid="link-brand"><span className="brand-mark">CP</span><span className="brand-copy"><span className="brand-name">{product}</span><span className="brand-kicker">SECURITY ASSESSMENT</span></span></Link>
+      <Link href="/" className="brand" data-testid="link-brand"><img className="brand-lockup" src={brandLockup} alt="CertaProof security assessment" /></Link>
       <nav>
         {navGroups.map(group => <div key={group.label}><div className="nav-label">{group.label}</div>{group.items.map(item => {
           const Icon = item.icon; const active = item.href === '/' ? location === '/' : location.startsWith(item.href);
