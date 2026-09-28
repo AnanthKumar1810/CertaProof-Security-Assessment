@@ -1,0 +1,1122 @@
+Act as a senior product designer, full-stack TypeScript developer, and application security engineer. Build CertaProof from scratch as a polished, functional website for SIH26163: “Security Assessment of the World Monitor Application,” NTRO, Software, Smart Automation.
+
+IMPORTANT: The final product must feel like a real, production-grade cybersecurity SaaS platform — not a generic admin dashboard, template, or AI-generated mockup.
+
+Use the existing CertaProof website as the primary visual/UI reference:
+https://certa-proof-security-demo--sananthkumar3.replit.app/
+
+Recreate and improve its overall visual language, layout quality, spacing, component hierarchy, color relationships, cards, navigation, buttons, typography, status indicators, forms, tables, dashboards, and interaction patterns. Do not simply copy screenshots; use the reference as the design system and create a consistent original implementation across the entire application.
+
+---
+
+# 1. Purpose and requirements
+
+Tagline: “Find. Prove. Fix. Verify.”
+
+CertaProof supports authorized assessment of World Monitor through:
+
+Scope → Check → Validate → Evidence → Impact → Remediate → Re-test → Report.
+
+Cover these seven PS areas:
+
+1. Authentication and session management.
+2. Authorization and access control.
+3. Input validation and data handling.
+4. API security.
+5. Client-side security controls.
+6. Secure communication mechanisms.
+7. Data storage and privacy protections.
+
+Every vulnerability record must include:
+
+* Title and description.
+* Affected component.
+* Severity and rationale.
+* Numbered reproduction steps.
+* Controlled PoC and evidence.
+* Business impact.
+* Practical remediation.
+
+The PS requires at least one valid, evidenced vulnerability. A synthetic demo does not establish a World Monitor vulnerability. Show this distinction clearly. Re-testing and automated validation are additional CertaProof capabilities.
+
+---
+
+# 2. Fixed stack
+
+Frontend: React, TypeScript, Vite, Tailwind CSS, TanStack Query, React Router.
+
+Backend: Node.js, TypeScript, Fastify, Zod.
+
+Jobs: Redis, BullMQ.
+
+Database: PostgreSQL, Prisma.
+
+Engine: custom TypeScript engine, Semgrep, OWASP ZAP, Playwright, Gitleaks, OSV-Scanner.
+
+Evidence: local file storage for development; S3-compatible adapter for deployment.
+
+Infrastructure: Docker, Docker Compose, GitHub Actions.
+
+Standards: OWASP WSTG, OWASP API Security Top 10, CVSS v4.0.
+
+Reports: HTML, PDF, JSON, SARIF.
+
+AI: optional explanation/remediation assistant after evidence exists.
+
+Do not substitute another core stack. Supporting icon, diagram, accessibility, and CVSS libraries are acceptable.
+
+---
+
+# 3. EXECUTION MODES AND HONESTY
+
+Provide an immediately usable demonstration workspace with synthetic identities and resources.
+
+Support:
+
+* Deterministic simulation without external services.
+* Executed local fixture when the backend is available.
+
+Label evidence origin clearly:
+
+“Simulated demonstration”
+
+“Executed local fixture”
+
+“Authorized target assessment”
+
+Never silently switch execution modes.
+
+Never present a timer as a real scanner run.
+
+Provide an authorized assessment workspace for target scope, inventory, runs, findings, and evidence.
+
+Do not automatically scan the public World Monitor URL.
+
+Demo reports must state:
+
+“Synthetic fixture results demonstrate the workflow and do not establish vulnerabilities in the live World Monitor application.”
+
+Unavailable integrations must show:
+
+“Not connected”
+
+instead of fabricated results.
+
+---
+
+# 4. UI/UX DESIGN SYSTEM — CRITICAL
+
+The UI/UX must be strongly inspired by the existing CertaProof reference website:
+
+https://certa-proof-security-demo--sananthkumar3.replit.app/
+
+Treat this website as the visual source of truth for the application's overall design direction.
+
+## Design personality
+
+Create a visual identity that feels:
+
+* Modern cybersecurity SaaS
+* Professional
+* Technical but approachable
+* Premium
+* Clean
+* Trustworthy
+* Analyst-focused
+* Information-dense without feeling cluttered
+
+Avoid making it look like:
+
+* A generic Bootstrap dashboard
+* A crypto dashboard
+* A hacker-themed website
+* A terminal-only security tool
+* A generic dark admin template
+* An AI landing-page template
+
+The interface should look like a real commercial security assessment product.
+
+## Color system
+
+Use the existing CertaProof website's visual color relationships as the primary reference.
+
+Maintain a strong dark/navy cybersecurity foundation with light workspace surfaces and the existing teal/cyan accent language.
+
+Use colors semantically:
+
+* Primary dark/navy: navigation, headers, major structural areas.
+* Teal/cyan: primary actions, active states, links, progress and selected elements.
+* White/light gray: primary workspace and content surfaces.
+* Red: confirmed security issues, critical states and destructive actions.
+* Amber/yellow: candidates, warnings and pending validation.
+* Green: verified fixes, successful validation and completed states.
+* Muted gray: secondary metadata and disabled states.
+
+Do NOT use excessive neon colors.
+
+Do NOT make every element colorful.
+
+Color should communicate state and hierarchy rather than decoration.
+
+Maintain WCAG-accessible contrast.
+
+Create reusable Tailwind design tokens/CSS variables so the entire application uses one consistent color system.
+
+---
+
+# 5. VISUAL HIERARCHY
+
+Use a consistent hierarchy throughout the application:
+
+1. Application/navigation layer
+2. Page header
+3. Context/breadcrumb layer
+4. Primary content
+5. Supporting cards/panels
+6. Technical details
+7. Actions
+
+Use:
+
+* Rounded but controlled card corners.
+* Subtle borders.
+* Very soft shadows only where useful.
+* Consistent spacing.
+* Strong section headings.
+* Compact metadata.
+* Clear status badges.
+* Consistent button sizing.
+* Consistent input heights.
+* Consistent icon sizing.
+
+Avoid huge empty spaces.
+
+Avoid giant headings that push functional content below the fold.
+
+The dashboard should prioritize useful security information.
+
+---
+
+# 6. TYPOGRAPHY
+
+Use a modern clean sans-serif font for the application.
+
+Typography should have clear levels:
+
+* Large page title
+* Medium section title
+* Small section label
+* Body text
+* Secondary metadata
+* Technical/monospace text
+
+Use a monospace font for:
+
+* API requests
+* API responses
+* IDs
+* hashes
+* HTTP methods
+* code snippets
+* evidence
+* logs
+* technical values
+
+Do not use monospace for the entire application.
+
+---
+
+# 7. SIDEBAR AND NAVIGATION
+
+Create a polished CertaProof application sidebar inspired by the reference website.
+
+The sidebar should contain:
+
+* CertaProof logo
+* Assessment/workspace selector
+* Overview
+* Assessments
+* Attack Surface
+* Checks & Coverage
+* Findings
+* Validation
+* Evidence
+* Remediation & Re-tests
+* Reports
+
+Secondary navigation:
+
+* Architecture & Integrations
+* Settings
+* Demo Guide
+
+The currently selected section must be visually obvious using the CertaProof accent color.
+
+Collapsed navigation must still have accessible labels/tooltips.
+
+The sidebar must work responsively.
+
+On smaller screens, use an accessible mobile navigation/drawer.
+
+---
+
+# 8. TOP BAR
+
+Create a clean application top bar containing useful context such as:
+
+* Current assessment
+* Environment
+* Execution mode
+* Assessment status
+* Notifications/activity where appropriate
+* User/workspace controls
+
+Do not fill the header with unnecessary icons.
+
+The top bar should visually integrate with the sidebar and content area.
+
+---
+
+# 9. DASHBOARD / OVERVIEW
+
+The Overview page should feel like the main command center.
+
+Show:
+
+* Selected environment
+* Assessment progress
+* Checks completed/planned
+* Candidate findings
+* Confirmed open findings
+* Verified fixes
+* Recent activity
+* Next action
+
+Use compact, meaningful cards.
+
+Do not create arbitrary “security scores.”
+
+Do not invent telemetry.
+
+Use real state from the application's data model.
+
+Seven-area coverage should use clean visual status indicators:
+
+* Not assessed
+* In progress
+* Candidate
+* Confirmed
+* Verified
+
+“Not assessed” must remain distinct from “Passed.”
+
+Add a deliverables panel linking PS requirements to:
+
+* Findings
+* Evidence
+* Impact
+* Remediation
+
+In demo mode show:
+
+“Authorized World Monitor finding not yet attached.”
+
+---
+
+# 10. CARDS AND COMPONENTS
+
+Create a reusable component system.
+
+Components should include:
+
+* Cards
+* Stat cards
+* Status badges
+* Severity badges
+* Buttons
+* Inputs
+* Selects
+* Tabs
+* Tables
+* Modals
+* Drawers
+* Tooltips
+* Progress bars
+* Timeline items
+* Evidence panels
+* Code blocks
+* Empty states
+* Loading states
+* Error states
+* Confirmation dialogs
+
+All components must share the same visual language.
+
+Do not create different styles for different pages unless there is a clear functional reason.
+
+---
+
+# 11. TABLE DESIGN
+
+Security data is information-heavy, so tables must be highly readable.
+
+Use:
+
+* Clear column hierarchy
+* Sticky headers where useful
+* Compact rows
+* Hover states
+* Status badges
+* Severity indicators
+* Search
+* Filters
+* Sorting where useful
+* Pagination when necessary
+* Row click/detail navigation
+
+For example, Findings should clearly show:
+
+Finding ID | Title | Category | Component | Severity | State | Origin | Updated
+
+Make rows feel interactive without excessive animation.
+
+---
+
+# 12. SECURITY STATUS VISUAL LANGUAGE
+
+Use consistent visual meaning throughout the entire application.
+
+Candidate:
+Amber
+
+Validating:
+Blue/teal
+
+Confirmed:
+Red
+
+Rejected:
+Muted gray
+
+Inconclusive:
+Amber/gray
+
+Remediation proposed:
+Teal
+
+Ready for re-test:
+Blue/teal
+
+Verified fixed:
+Green
+
+Still reproducible:
+Red
+
+Do not use color alone to communicate meaning. Always combine color with text/icon/status.
+
+---
+
+# 13. ASSESSMENT WIZARD
+
+Build a polished multi-step wizard.
+
+Steps:
+
+1. Scope
+2. Setup
+3. Review
+
+The wizard should have:
+
+* Step indicator
+* Progress state
+* Clear form sections
+* Inline validation
+* Helpful descriptions
+* Back/Next controls
+* Cancel
+* Save
+* Error states
+
+Creation saves a distinct record and opens its detail page.
+
+Implement:
+
+* Search
+* Filters
+* Validation
+* Empty states
+* Progress
+* Cancellation
+* Errors
+
+---
+
+# 14. ATTACK SURFACE
+
+Build an interactive reference architecture map.
+
+Web:
+
+Browser → Edge/API → Service/Relay → Cache/Data → External sources.
+
+Desktop extension:
+
+Tauri renderer → IPC → Node.js sidecar → Cloud/API.
+
+Include REST/MCP interfaces where applicable.
+
+Use a polished visual architecture diagram with:
+
+* Nodes
+* Directed connections
+* Trust boundaries
+* Hover states
+* Clickable components
+* Component detail panels
+
+Clicking a component should reveal:
+
+* Purpose
+* Interfaces
+* Checks
+* Findings
+* Coverage
+* Evidence
+* Limitations
+
+Label seeded architecture:
+
+“Reference model”
+
+Only label actual inspected inventory:
+
+“Discovered”
+
+Keep the synthetic authorization fixture separate from World Monitor architecture.
+
+---
+
+# 15. VALIDATION WORKBENCH
+
+Make the validation screen one of the strongest parts of the UI.
+
+Show:
+
+* Identity
+* Resource owner
+* Policy
+* Expected result
+* Observed result
+* Assertions
+* Request
+* Response
+* Evidence
+
+Create a clean policy matrix:
+
+A → A = Allow
+
+A → B = Deny
+
+B → B = Allow
+
+B → A = Deny, but vulnerable fixture incorrectly returns protected A data.
+
+Selecting a row must update every associated field correctly.
+
+“Run controlled validation” creates:
+
+* Run ID
+* Validation progress
+* Assertions
+* Responses
+* Evidence
+
+Confirm the fixture issue only when:
+
+1. Access policy is violated.
+2. Protected resource content is actually returned.
+
+HTTP 200 alone is insufficient.
+
+---
+
+# 16. FINDINGS PAGE
+
+Create a professional security findings workspace.
+
+Filters:
+
+* Category
+* Component
+* Severity
+* State
+* Origin
+
+Each finding opens its own detail page.
+
+Finding detail should contain visually distinct sections:
+
+Overview
+
+Affected component
+
+Severity
+
+Rationale
+
+Prerequisites
+
+Expected behavior
+
+Actual behavior
+
+Reproduction steps
+
+Technical cause
+
+Evidence
+
+Business impact
+
+Remediation
+
+Verification history
+
+Source reference
+
+Environment
+
+Evidence origin
+
+Use a strong visual distinction between:
+
+Candidate
+
+Confirmed
+
+Rejected
+
+Inconclusive
+
+Never make a candidate visually identical to a confirmed vulnerability.
+
+---
+
+# 17. EVIDENCE VIEWER
+
+Evidence should look technical and trustworthy.
+
+Include:
+
+* Request
+* Response
+* Assertions
+* Logs
+* Screenshots when available
+* Source references
+* Original run
+* Re-test
+
+Artifacts include:
+
+* Assessment ID
+* Finding ID
+* Test ID
+* Run ID
+* Environment
+* Origin
+* Timestamp
+* Aliases
+* Revision
+* Redaction status
+
+Use monospace presentation for raw technical artifacts.
+
+Provide:
+
+* Copy
+* Preview
+* Download
+* Before/after comparison
+
+Preserve separate runs.
+
+Calculate hashes from actual artifact bytes.
+
+Redact secrets.
+
+Never store real credentials in browser persistence.
+
+---
+
+# 18. REMEDIATION EXPERIENCE
+
+Create a visually clear remediation workflow.
+
+Show:
+
+Finding → Proposed Fix → Applied → Ready for Re-test → Verification
+
+Explain the fixture's missing object-permission check.
+
+Show a short illustrative code comparison:
+
+Before
+
+vs.
+
+After
+
+“Apply demo fix” changes the isolated fixture policy and marks verification pending.
+
+The UI must clearly communicate:
+
+Applying a fix ≠ verifying the fix.
+
+Only a successful re-test can produce:
+
+“Verified fixed · Demo fixture”
+
+---
+
+# 19. RE-TEST EXPERIENCE
+
+“Run the same test again” repeats all four cases:
+
+* Owners retain access.
+* Cross-user requests are denied.
+* Denied responses contain no protected content.
+
+Blocking everyone must fail verification.
+
+Show:
+
+Original run → Remediation → Re-test → Assertions → Final status
+
+Preserve:
+
+* Original failure evidence
+* Before/after run IDs
+* Timestamps
+* Assertions
+* Evidence
+
+Retain the test for regression use.
+
+---
+
+# 20. REPORTS
+
+Create a polished report-generation interface.
+
+Generate reports from the selected assessment's current state.
+
+Include:
+
+* Scope
+* Authorization context
+* Methodology
+* Seven-area coverage
+* Limitations
+* Confirmed findings
+* Candidates separately
+* Required deliverables
+* Evidence
+* Remediation
+* Re-test results
+
+Never claim a fix is verified while its re-test is pending.
+
+Implement:
+
+* HTML
+* JSON
+* Valid SARIF
+* Print-friendly PDF
+* Real PDF generation
+
+Preserve demo disclosures in exports.
+
+---
+
+# 21. INTEGRATIONS
+
+Integration cards should visually show:
+
+* Integration name
+* Purpose
+* Connection status
+* Execution mode
+* Latest run
+* Configuration
+
+Statuses:
+
+Connected
+
+Not connected
+
+Unavailable
+
+Error
+
+Never fabricate integration results.
+
+Implement typed adapters.
+
+---
+
+# 22. MICRO-INTERACTIONS
+
+Use subtle professional interactions.
+
+Examples:
+
+* Button hover
+* Card hover
+* Table-row hover
+* Smooth sidebar transitions
+* Modal transitions
+* Progress transitions
+* Toast notifications
+* Copy confirmation
+* Validation success
+* Evidence expansion
+
+Animations must be fast and subtle.
+
+Avoid flashy animations.
+
+Respect:
+
+`prefers-reduced-motion`
+
+---
+
+# 23. RESPONSIVE DESIGN
+
+The application must work properly on:
+
+* Desktop
+* Laptop
+* Tablet
+* Mobile
+
+Desktop should prioritize the analyst workspace.
+
+Tablet should collapse secondary content intelligently.
+
+Mobile should use:
+
+* Drawer navigation
+* Stacked cards
+* Horizontally scrollable technical tables where necessary
+* Full-width actions
+* Readable evidence panels
+
+Do not simply shrink the desktop UI.
+
+---
+
+# 24. ACCESSIBILITY
+
+Implement:
+
+* Keyboard navigation
+* Visible focus states
+* Accessible labels
+* ARIA where necessary
+* Proper heading hierarchy
+* Screen-reader-friendly controls
+* Sufficient contrast
+* Reduced motion support
+* Accessible status indicators
+
+Every icon-only button must have an accessible name.
+
+---
+
+# 25. DATA AND CONSISTENT STATE
+
+Organize web, API, worker, fixture, shared contracts, engine, reporting, and storage into clear modules.
+
+Use stable IDs and relationships for:
+
+* assessments
+* assets
+* identities
+* resources
+* policies
+* checks
+* runs
+* findings
+* evidence
+* remediation
+* reports
+
+Use typed service adapters for simulation and API modes.
+
+TanStack Query manages server state and mutations.
+
+Derive totals and statuses from one source of truth.
+
+Preserve the selected assessment across pages.
+
+Persist synthetic progress across refresh.
+
+Provide:
+
+“Reset Demo”
+
+Separate:
+
+Validation:
+
+Candidate → Validating → Confirmed/Rejected/Inconclusive
+
+Remediation:
+
+Not started → Proposed → Applied → Ready for re-test
+
+Verification:
+
+Not run → Running → Verified fixed/Still reproducible/Inconclusive
+
+Errors never mean rejected or fixed.
+
+Applying remediation does not verify it.
+
+---
+
+# 26. SIGNATURE AUTHORIZATION DEMO
+
+Create Analyst A and Analyst B with:
+
+Watchlist A
+
+Watchlist B
+
+Use explicitly synthetic endpoint:
+
+GET /demo-api/watchlists/
+
+Policy:
+
+A → A: allow
+
+A → B: deny
+
+B → B: allow
+
+B → A: deny, but vulnerable fixture incorrectly returns protected A data.
+
+Start as:
+
+Candidate
+
+Tests: Not run
+
+The validation workbench displays:
+
+* Identity
+* Resource owner
+* Policy
+* Expected result
+* Observed result
+* Assertions
+* Redacted request/response
+* Evidence
+
+---
+
+# 27. DEMO GUIDE
+
+Provide a guided three-minute journey:
+
+Scope
+→ Map
+→ Candidate
+→ Matrix
+→ Validation
+→ Evidence
+→ Impact
+→ Demo fix
+→ Re-test
+→ Report
+
+Include:
+
+Next
+
+Back
+
+Exit
+
+Reset
+
+The guide should visually highlight the current area without blocking the application unnecessarily.
+
+---
+
+# 28. EMPTY / LOADING / ERROR STATES
+
+Every page must have intentionally designed states.
+
+Empty:
+
+Explain what is missing and what the user can do next.
+
+Loading:
+
+Use realistic skeletons rather than arbitrary spinners everywhere.
+
+Error:
+
+Clearly explain the problem and provide a retry/action.
+
+Never show blank screens.
+
+Never show fake successful data when an integration fails.
+
+---
+
+# 29. FINAL VISUAL QUALITY REQUIREMENT
+
+Before considering the application complete, compare every major page against the existing CertaProof reference website.
+
+Check:
+
+* Colors
+* Spacing
+* Typography
+* Sidebar
+* Buttons
+* Cards
+* Tables
+* Status badges
+* Forms
+* Page headers
+* Navigation
+* Responsive behavior
+* Overall visual consistency
+
+The entire application should look like ONE product designed by ONE professional design team.
+
+Do not create each page as a separate visual style.
+
+The visual system must remain consistent from:
+
+Dashboard → Assessment → Attack Surface → Validation → Findings → Evidence → Remediation → Reports.
+
+---
+
+# 30. HONESTY AND SECURITY
+
+Never fabricate:
+
+* vulnerabilities
+* evidence
+* scan results
+* integrations
+* telemetry
+* CVSS scores
+* World Monitor findings
+
+AI may explain existing evidence and suggest fixes.
+
+AI must NOT:
+
+* confirm findings
+* invent evidence
+* execute tests
+* change severity silently
+* close findings
+
+The application must work without AI.
+
+Workers need:
+
+* Progress
+* Time limits
+* Cancellation
+* Safe retries
+* Error handling
+
+Enforce authorized scope server-side.
+
+Isolate the vulnerable fixture.
+
+Do not interpolate user input into shell commands.
+
+---
+
+# 31. ACCEPTANCE CHECKS
+
+Verify:
+
+* Build
+* Routes
+* Wizard
+* Filters
+* Matrix selection
+* Assertions
+* Evidence links
+* State transitions
+* Consistent totals
+* Refresh persistence
+* Reset
+* Exports
+* Keyboard use
+* Responsive layouts
+* Accessibility
+
+Test that:
+
+* Applying a fix alone cannot verify it.
+* Errors cannot produce success.
+* Legitimate access survives remediation.
+* Cross-user access is denied after remediation.
+* Evidence remains linked to the correct run.
+* Candidate findings remain separate from confirmed findings.
+* Demo evidence is clearly distinguished from real target evidence.
+
+---
+
+# 32. DELIVERABLE
+
+Deliver:
+
+* Working code
+* Seed data
+* Isolated vulnerable fixture
+* Prisma migrations
+* Environment examples without secrets
+* Docker Compose
+* Setup instructions
+* Tests
+* Short presentation guide
+
+Clearly list:
+
+Implemented integrations
+
+Remaining limitations
+
+Prioritize the complete:
+
+Scope → Check → Validate → Evidence → Impact → Remediate → Re-test → Report
+
+workflow before optional features.
+
+FINAL REQUIREMENT:
+
+Do not build a static mockup.
+
+Do not stop at the UI.
+
+Implement the actual interactions, state transitions, routes, data flow, validation workflow, evidence workflow, remediation workflow, re-test workflow, and report generation.
+
+The final result should feel like a polished, production-ready cybersecurity assessment platform using the existing CertaProof website's UI/UX language as its design foundation.

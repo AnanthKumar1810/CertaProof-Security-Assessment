@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "CertaProof"
+description = "A production-minded security assessment workspace for authorized World Monitor testing, evidence, remediation, re-testing, and reporting."
+version = "1.0.0"
+id = "artifacts/certaproof"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24397
+
+[services.development]
+run = "pnpm --filter @workspace/certaproof run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/certaproof", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/certaproof/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24397"
+BASE_PATH = "/"

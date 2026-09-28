@@ -3,13 +3,19 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: CertaProof authorized security assessment workspace API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: assessments
+  - name: validation
+  - name: findings
+  - name: evidence
+  - name: remediation
+  - name: reports
 paths:
   /healthz:
     get:
@@ -24,7 +30,209 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /workspace:
+    get:
+      operationId: getWorkspace
+      tags: [assessments]
+      summary: Get the current demonstration workspace
+      responses:
+        "200":
+          description: Current workspace
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workspace"
+  /assessments:
+    get:
+      operationId: listAssessments
+      tags: [assessments]
+      summary: List assessments
+      responses:
+        "200":
+          description: Assessments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Assessment"
+    post:
+      operationId: createAssessment
+      tags: [assessments]
+      summary: Create an authorized assessment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssessmentInput"
+      responses:
+        "201":
+          description: Created assessment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Assessment"
+  /assessments/{assessmentId}:
+    get:
+      operationId: getAssessment
+      tags: [assessments]
+      summary: Get an assessment detail
+      parameters:
+        - $ref: "#/components/parameters/AssessmentId"
+      responses:
+        "200":
+          description: Assessment detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssessmentDetail"
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [assessments]
+      summary: Get overview metrics and activity
+      responses:
+        "200":
+          description: Dashboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboard"
+  /validation/cases:
+    get:
+      operationId: listValidationCases
+      tags: [validation]
+      summary: List controlled authorization cases
+      responses:
+        "200":
+          description: Validation cases
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ValidationCase"
+  /validation/runs:
+    post:
+      operationId: runValidation
+      tags: [validation]
+      summary: Run the isolated synthetic fixture validation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidationInput"
+      responses:
+        "201":
+          description: Validation run
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationRun"
+  /findings:
+    get:
+      operationId: listFindings
+      tags: [findings]
+      summary: List findings
+      responses:
+        "200":
+          description: Findings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Finding"
+  /findings/{findingId}:
+    get:
+      operationId: getFinding
+      tags: [findings]
+      summary: Get a finding with evidence and verification history
+      parameters:
+        - $ref: "#/components/parameters/FindingId"
+      responses:
+        "200":
+          description: Finding detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FindingDetail"
+  /evidence:
+    get:
+      operationId: listEvidence
+      tags: [evidence]
+      summary: List evidence artifacts
+      responses:
+        "200":
+          description: Evidence
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Evidence"
+  /remediation/{findingId}:
+    post:
+      operationId: applyRemediation
+      tags: [remediation]
+      summary: Apply the isolated demo remediation
+      parameters:
+        - $ref: "#/components/parameters/FindingId"
+      responses:
+        "200":
+          description: Remediation state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Remediation"
+  /verification/{findingId}:
+    post:
+      operationId: runRetest
+      tags: [remediation]
+      summary: Re-test a remediated finding
+      parameters:
+        - $ref: "#/components/parameters/FindingId"
+      responses:
+        "201":
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Verification"
+  /reports:
+    post:
+      operationId: generateReport
+      tags: [reports]
+      summary: Generate a report from current assessment state
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportInput"
+      responses:
+        "201":
+          description: Generated report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Report"
 components:
+  parameters:
+    AssessmentId:
+      name: assessmentId
+      in: path
+      required: true
+      schema:
+        type: string
+    FindingId:
+      name: findingId
+      in: path
+      required: true
+      schema:
+        type: string
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +241,211 @@ components:
           type: string
       required:
         - status
+    AssessmentInput:
+      type: object
+      required: [name, target, environment, authorization]
+      properties:
+        name: { type: string, minLength: 1 }
+        target: { type: string, minLength: 1 }
+        environment: { type: string, enum: [demo, local, authorized] }
+        authorization: { type: string, minLength: 1 }
+    Assessment:
+      allOf:
+        - $ref: "#/components/schemas/AssessmentInput"
+        - type: object
+          required: [id, status, mode, createdAt, progress]
+          properties:
+            id: { type: string }
+            status: { type: string, enum: [in_progress, complete, draft] }
+            mode: { type: string, enum: [simulation, local_fixture, authorized_target] }
+            createdAt: { type: string }
+            progress: { type: integer }
+    AssessmentDetail:
+      allOf:
+        - $ref: "#/components/schemas/Assessment"
+        - type: object
+          required: [coverage, components]
+          properties:
+            coverage:
+              type: array
+              items: { $ref: "#/components/schemas/Coverage" }
+            components:
+              type: array
+              items: { $ref: "#/components/schemas/SurfaceComponent" }
+    Coverage:
+      type: object
+      required: [area, status, checks]
+      properties:
+        area: { type: string }
+        status: { type: string, enum: [not_assessed, in_progress, candidate, confirmed, verified] }
+        checks: { type: integer }
+    SurfaceComponent:
+      type: object
+      required: [id, name, purpose, kind, source]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        purpose: { type: string }
+        kind: { type: string }
+        source: { type: string, enum: [reference_model, discovered] }
+        interfaces:
+          type: array
+          items: { type: string }
+    Dashboard:
+      type: object
+      required: [openAssessments, candidates, confirmed, verified, progress, activity, nextAction]
+      properties:
+        openAssessments: { type: integer }
+        candidates: { type: integer }
+        confirmed: { type: integer }
+        verified: { type: integer }
+        progress: { type: integer }
+        activity:
+          type: array
+          items: { $ref: "#/components/schemas/Activity" }
+        nextAction: { type: string }
+    Activity:
+      type: object
+      required: [id, type, title, detail, origin, time]
+      properties:
+        id: { type: string }
+        type: { type: string }
+        title: { type: string }
+        detail: { type: string }
+        origin: { type: string }
+        time: { type: string }
+    ValidationCase:
+      type: object
+      required: [id, identity, owner, policy, expected, observed, vulnerable]
+      properties:
+        id: { type: string }
+        identity: { type: string }
+        owner: { type: string }
+        policy: { type: string }
+        expected: { type: string }
+        observed: { type: string }
+        vulnerable: { type: boolean }
+    ValidationInput:
+      type: object
+      required: [caseId]
+      properties:
+        caseId: { type: string }
+    ValidationRun:
+      type: object
+      required: [id, caseId, status, assertions, request, response, origin, createdAt]
+      properties:
+        id: { type: string }
+        caseId: { type: string }
+        status: { type: string, enum: [passed, failed, inconclusive] }
+        assertions:
+          type: array
+          items: { type: string }
+        request: { type: string }
+        response: { type: string }
+        origin: { type: string }
+        createdAt: { type: string }
+    Finding:
+      type: object
+      required: [id, title, category, component, severity, state, origin, updatedAt]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        category: { type: string }
+        component: { type: string }
+        severity: { type: string, enum: [critical, high, medium, low] }
+        state: { type: string, enum: [candidate, confirmed, rejected, inconclusive] }
+        origin: { type: string }
+        updatedAt: { type: string }
+    FindingDetail:
+      allOf:
+        - $ref: "#/components/schemas/Finding"
+        - type: object
+          required: [description, rationale, prerequisites, expected, actual, steps, cause, impact, remediation, evidence, verification]
+          properties:
+            description: { type: string }
+            rationale: { type: string }
+            prerequisites: { type: string }
+            expected: { type: string }
+            actual: { type: string }
+            steps:
+              type: array
+              items: { type: string }
+            cause: { type: string }
+            impact: { type: string }
+            remediation: { type: string }
+            evidence:
+              type: array
+              items: { $ref: "#/components/schemas/Evidence" }
+            verification:
+              type: array
+              items: { $ref: "#/components/schemas/Verification" }
+    Evidence:
+      type: object
+      required: [id, findingId, testId, runId, environment, origin, timestamp, revision, redaction, request, response, assertions]
+      properties:
+        id: { type: string }
+        findingId: { type: string }
+        testId: { type: string }
+        runId: { type: string }
+        environment: { type: string }
+        origin: { type: string }
+        timestamp: { type: string }
+        revision: { type: string }
+        redaction: { type: string }
+        request: { type: string }
+        response: { type: string }
+        assertions:
+          type: array
+          items: { type: string }
+    Remediation:
+      type: object
+      required: [findingId, status, message]
+      properties:
+        findingId: { type: string }
+        status: { type: string, enum: [proposed, applied, ready_for_retest] }
+        message: { type: string }
+    Verification:
+      type: object
+      required: [id, findingId, status, assertions, createdAt, origin]
+      properties:
+        id: { type: string }
+        findingId: { type: string }
+        status: { type: string, enum: [verified_fixed, still_reproducible, inconclusive] }
+        assertions:
+          type: array
+          items: { type: string }
+        createdAt: { type: string }
+        origin: { type: string }
+    ReportInput:
+      type: object
+      required: [format]
+      properties:
+        format: { type: string, enum: [html, json, sarif, pdf] }
+    Report:
+      type: object
+      required: [id, format, status, disclosure, generatedAt]
+      properties:
+        id: { type: string }
+        format: { type: string }
+        status: { type: string }
+        disclosure: { type: string }
+        generatedAt: { type: string }
+    Workspace:
+      type: object
+      required: [product, assessment, mode, integrations]
+      properties:
+        product: { type: string }
+        assessment: { $ref: "#/components/schemas/Assessment" }
+        mode: { type: string }
+        integrations:
+          type: array
+          items: { $ref: "#/components/schemas/Integration" }
+    Integration:
+      type: object
+      required: [name, purpose, status, mode]
+      properties:
+        name: { type: string }
+        purpose: { type: string }
+        status: { type: string, enum: [connected, not_connected, unavailable, error] }
+        mode: { type: string }
 
