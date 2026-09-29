@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.resolve(__dirname, "../artifacts/certaproof/dist/public");
+const demoData = JSON.parse(fs.readFileSync(path.resolve(__dirname, "../artifacts/api-server/src/demo-data.json"), "utf8"));
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
 
 const disclosure =
@@ -187,7 +188,7 @@ const baseCases = [
 const createAssessments = () => [
   {
     id: "asm-world-monitor",
-    name: "World Monitor Assessment",
+    name: "World Monitor · AuthZ review",
     target: environment,
     environment: "demo",
     authorization: "Synthetic fixture authorization grant · Pre-approved scope",
@@ -195,6 +196,7 @@ const createAssessments = () => [
     mode: "fixture",
     createdAt: "2026-09-29T08:42:00.000Z",
   },
+  ...demoData.assessments,
 ];
 
 let assessments = createAssessments();
@@ -412,12 +414,12 @@ function makeFinding() {
     .find((run) => run?.caseId === "case-b-a");
   return {
     id: "finding-001",
-    title: "Broken Object-Level Authorization (BOLA) on Watchlist Endpoint",
+    title: "Cross-user watchlist data returned by synthetic authorization fixture",
     category: "Authorization and access control",
     component: "Watchlist Service",
     severity: "high",
     severityAssessment: "Qualitative fixture severity · CVSS v4.0 pending formal calculator scoring",
-    state: confirmed ? "confirmed" : "candidate",
+    state: state.verification?.status === "verified_fixed" ? "verified_fixed" : state.remediation.status !== "proposed" ? "ready_for_retest" : confirmed ? "confirmed" : "candidate",
     origin: confirmed ? "Executed local fixture" : "Simulated preview",
     updatedAt: state.lastMatrix?.createdAt ?? "2026-09-29T08:48:00.000Z",
     description:
@@ -442,6 +444,54 @@ function makeFinding() {
     environment,
     assessmentId: "asm-world-monitor",
     policyVersion: state.originalMatrix?.policyVersion ?? state.lastMatrix?.policyVersion ?? "fixture-policy-v1",
+    disclosure,
+  };
+}
+
+function listFindings() {
+  return [makeFinding(), ...demoData.findings];
+}
+
+function assessmentSummary(assessment) {
+  const completed = assessment.id === "asm-world-monitor" ? completedChecks() : assessment.completedChecks ?? 0;
+  const total = assessment.id === "asm-world-monitor" ? totalChecks() : assessment.totalChecks ?? totalChecks();
+  return { ...assessment, completedChecks: completed, totalChecks: total, progress: Math.round((completed / total) * 100) };
+}
+
+function assessmentCoverage(assessment) {
+  if (assessment.id === "asm-world-monitor") return getCoverage();
+  const { completedChecks: completed, totalChecks: total } = assessmentSummary(assessment);
+  const planned = coverageTemplate.map((item, index) => Math.floor((index + 1) * total / coverageTemplate.length) - Math.floor(index * total / coverageTemplate.length));
+  let remaining = completed;
+  return coverageTemplate.map((item, index) => {
+    const completedChecks = Math.min(planned[index], remaining);
+    remaining -= completedChecks;
+    return { ...item, plannedChecks: planned[index], completedChecks, evidence: 0, status: completedChecks === planned[index] ? "complete" : completedChecks ? "in_progress" : "not_assessed", limitations: "Seeded synthetic assessment history; no executable trace is attached to this record." };
+  });
+}
+
+function historicalFinding(id) {
+  const finding = demoData.findings.find((item) => item.id === id);
+  if (!finding) return undefined;
+  const assessment = assessments.find((item) => item.id === finding.assessmentId);
+  return {
+    ...finding,
+    severityAssessment: "Synthetic demo severity classification",
+    description: `This seeded historical ${finding.state.replaceAll("_", " ")} record belongs to the isolated ${assessment?.name ?? "demo"} assessment. It is not a claim about a live service.`,
+    rationale: "Illustrates a controlled authorization boundary check using synthetic identities and resources.",
+    prerequisites: "Isolated demo fixture only; no production identity or target is involved.",
+    expected: "Access is limited to the authorized synthetic identity and resource.",
+    actual: "Historical demo status; no executable trace is attached to this record.",
+    steps: ["Review the synthetic assessment boundary and recorded demo status."],
+    cause: "Historical synthetic scenario; root cause is not established for a live system.",
+    rootCause: "Historical synthetic scenario; root cause is not established for a live system.",
+    impact: "Illustrative fixture impact only; no production impact is asserted.",
+    remediation: "Use the assessment's controlled fixture to validate and document any fix.",
+    evidence: [],
+    verification: [],
+    remediationState: finding.state === "ready_for_retest" ? "ready_for_retest" : "proposed",
+    environment: assessment?.target ?? "demo.local",
+    policyVersion: "synthetic-demo-history",
     disclosure,
   };
 }
@@ -492,6 +542,7 @@ function getChecklist() {
 
 function getDashboard() {
   const finding = makeFinding();
+  const findings = listFindings();
   const verified = state.verification?.status === "verified_fixed";
   const remediationPending = state.remediation.status !== "proposed" && !verified;
   const checklist = getChecklist();
@@ -539,14 +590,20 @@ function getDashboard() {
           origin: "Workspace",
           time: "2026-09-29T08:42:00.000Z",
         },
+    { id: "activity-history-1", type: "verification", title: "Synthetic fix verification completed", detail: "Evidence Portal · Session Boundary Review", origin: "Synthetic regression case", time: "2026-09-28T15:00:00.000Z" },
+    { id: "activity-history-2", type: "remediation", title: "Re-test requested", detail: "Reporting API · Object Access Review", origin: "Controlled fixture execution", time: "2026-09-28T09:00:00.000Z" },
+    { id: "activity-history-3", type: "validation", title: "Demo finding recorded", detail: "Admin Console · Privilege Review", origin: "Demo validation trace", time: "2026-09-27T14:00:00.000Z" },
   ].filter(Boolean);
 
   return {
-    openAssessments: assessments.filter((item) => item.status !== "complete").length,
-    candidates: finding.state === "candidate" ? 1 : 0,
-    confirmed: finding.state === "confirmed" ? 1 : 0,
-    remediationPending: remediationPending ? 1 : 0,
-    verified: verified ? 1 : 0,
+    openAssessments: assessments.filter((item) => !["complete", "verified"].includes(item.status)).length,
+    candidates: findings.length,
+    confirmed: findings.filter((item) => item.state === "confirmed").length,
+    remediationPending: findings.filter((item) => item.state === "ready_for_retest").length,
+    verified: findings.filter((item) => item.state === "verified_fixed").length,
+    activeFindingState: finding.state,
+    activeRemediationPending: remediationPending,
+    activeVerified: verified,
     completedChecks: completedChecks(),
     totalChecks: totalChecks(),
     progress: Math.round((completedChecks() / totalChecks()) * 100),
@@ -668,10 +725,7 @@ const server = http.createServer(async (req, res) => {
       return sendJson(
         res,
         200,
-        assessments.map((assessment) => ({
-          ...assessment,
-          progress: Math.round((completedChecks() / totalChecks()) * 100),
-        })),
+        assessments.map(assessmentSummary),
       );
     }
 
@@ -690,7 +744,7 @@ const server = http.createServer(async (req, res) => {
         createdAt: now(),
       };
       assessments.unshift(assessment);
-      return sendJson(res, 201, { ...assessment, progress: 0 });
+      return sendJson(res, 201, assessmentSummary(assessment));
     }
 
     if (apiPath.startsWith("/assessments/") && method === "GET") {
@@ -698,12 +752,9 @@ const server = http.createServer(async (req, res) => {
       const assessment = assessments.find((item) => item.id === assessmentId);
       if (!assessment) return sendJson(res, 404, { error: "Assessment not found" });
       return sendJson(res, 200, {
-        ...assessment,
-        progress: Math.round((completedChecks() / totalChecks()) * 100),
-        completedChecks: completedChecks(),
-        totalChecks: totalChecks(),
-        coverage: getCoverage(),
-        components,
+        ...assessmentSummary(assessment),
+        coverage: assessmentCoverage(assessment),
+        components: assessment.id === "asm-world-monitor" ? components : [{ id: "component-service", name: assessment.name.split(" · ")[0], purpose: "Isolated synthetic fixture boundary for this historical demo assessment.", interfaces: [assessment.target] }],
         modeLabel,
       });
     }
@@ -727,13 +778,14 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (apiPath === "/findings" && method === "GET") {
-      return sendJson(res, 200, [makeFinding()]);
+      return sendJson(res, 200, listFindings());
     }
 
     if (apiPath.startsWith("/findings/") && method === "GET") {
       const findingId = apiPath.slice(10);
       if (findingId !== "finding-001") {
-        return sendJson(res, 404, { error: "Finding not found" });
+        const finding = historicalFinding(findingId);
+        return finding ? sendJson(res, 200, finding) : sendJson(res, 404, { error: "Finding not found" });
       }
       return sendJson(res, 200, makeFinding());
     }

@@ -198,7 +198,9 @@ const statusText: Record<string, string> = {
   policy_failed: "Policy failed",
   inconclusive: "Inconclusive",
   candidate: "Candidate signal",
+  under_validation: "Under validation",
   confirmed: "Confirmed finding",
+  remediation_in_progress: "Remediation in progress",
   rejected: "Rejected",
   proposed: "Proposed fix",
   applied: "Applied (Awaiting re-test)",
@@ -208,6 +210,10 @@ const statusText: Record<string, string> = {
   not_assessed: "Not assessed",
   planned: "Planned (0 checks)",
   in_progress: "In progress",
+  validation_required: "Validation required",
+  awaiting_evidence: "Awaiting evidence",
+  remediation: "Remediation",
+  verified: "Verified",
   demonstrated_fixture: "Assessed (4 checks)",
   complete: "Complete",
   pending: "Pending",
@@ -222,11 +228,11 @@ const statusText: Record<string, string> = {
  */
 function StatusTag({ value }: { value?: string }) {
   const tone =
-    value === "verified_fixed" || value === "passed" || value === "complete" || value === "demonstrated_fixture"
+    value === "verified_fixed" || value === "verified" || value === "passed" || value === "complete" || value === "demonstrated_fixture"
       ? "teal"
       : value === "high" || value === "critical" || value === "failed" || value === "policy_failed" || value === "still_reproducible"
       ? "red"
-      : value === "confirmed" || value === "candidate" || value === "in_progress" || value === "ready_for_retest" || value === "proposed" || value === "applied"
+      : value === "confirmed" || value === "candidate" || value === "under_validation" || value === "remediation_in_progress" || value === "validation_required" || value === "awaiting_evidence" || value === "remediation" || value === "in_progress" || value === "ready_for_retest" || value === "proposed" || value === "applied"
       ? "amber"
       : "slate";
 
@@ -479,9 +485,9 @@ function Metric({
 
 function ProofStepper({ data }: { data: any }) {
   // Steps: 1. Validate, 2. Evidence, 3. Remediate, 4. Re-test, 5. Report
-  const isVerified = data.verified > 0;
-  const isAwaitingRetest = data.remediationPending > 0;
-  const isConfirmed = data.confirmed > 0;
+  const isVerified = data.activeVerified;
+  const isAwaitingRetest = data.activeRemediationPending;
+  const isConfirmed = data.activeFindingState === "confirmed";
   const hasExecutedRuns = data.completedChecks > 0;
 
   let activeStep = 0;
@@ -542,7 +548,7 @@ function Overview() {
   const completedMilestones = checklistItems.filter((i: any) => i.status === "complete").length;
   const totalMilestones = checklistItems.length || 6;
   const milestonePercent = Math.round((completedMilestones / totalMilestones) * 100);
-  const isEvidenceReady = data.verified > 0 || completedMilestones >= 4;
+  const isEvidenceReady = data.activeVerified || completedMilestones >= 4;
 
   return (
     <Page
@@ -566,7 +572,7 @@ function Overview() {
       {/* 5 Tabular Metrics Row */}
       <div className="metrics">
         <Metric label="Open assessments" value={data.openAssessments} note="active demo" />
-        <Metric label="Potential findings" value={data.candidates} note="needs validation" />
+        <Metric label="Potential findings" value={data.candidates} note="synthetic records" />
         <Metric label="Confirmed findings" value={data.confirmed} note="fixture evidence" />
         <Metric label="Awaiting re-test" value={data.remediationPending} note="fix applied" />
         <Metric label="Verified fixes" value={data.verified} note="full re-test only" />
@@ -581,7 +587,7 @@ function Overview() {
               <h3>Active assessment</h3>
               <p>Next useful action: {data.nextAction}</p>
             </div>
-            <StatusTag value={data.verified > 0 ? "verified_fixed" : data.remediationPending > 0 ? "ready_for_retest" : data.confirmed > 0 ? "confirmed" : "candidate"} />
+            <StatusTag value={data.activeVerified ? "verified_fixed" : data.activeRemediationPending ? "ready_for_retest" : data.activeFindingState} />
           </div>
 
           <div className="card-body">
@@ -607,8 +613,8 @@ function Overview() {
               <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>
                 Current phase: <strong style={{ color: "var(--text-primary)" }}>{data.currentStep}</strong>
               </div>
-              <Link href={data.confirmed ? "/findings/finding-001" : "/validation"} className="btn btn-outline" data-testid="link-view-finding">
-                {data.confirmed ? "Inspect finding" : "Open validation"} <ArrowRight size={13} aria-hidden="true" />
+              <Link href={data.activeFindingState !== "candidate" ? "/findings/finding-001" : "/validation"} className="btn btn-outline" data-testid="link-view-finding">
+                {data.activeFindingState !== "candidate" ? "Inspect finding" : "Open validation"} <ArrowRight size={13} aria-hidden="true" />
               </Link>
             </div>
           </div>
@@ -1043,6 +1049,11 @@ function Assessments() {
         >
           <option value="all">All statuses</option>
           <option value="in_progress">In progress</option>
+          <option value="validation_required">Validation required</option>
+          <option value="awaiting_evidence">Awaiting evidence</option>
+          <option value="remediation">Remediation</option>
+          <option value="ready_for_retest">Re-test pending</option>
+          <option value="verified">Verified</option>
           <option value="complete">Complete</option>
           <option value="planned">Planned</option>
         </select>
@@ -1124,8 +1135,8 @@ function Assessments() {
                       <Link href={`/assessments/${item.id}`} className="btn btn-outline" style={{ height: 28, padding: "2px 10px", fontSize: 12 }}>
                         View
                       </Link>
-                      <Link href="/validation" className="btn btn-outline" style={{ height: 28, padding: "2px 10px", fontSize: 12 }}>
-                        Validate
+                      <Link href={item.id === "asm-world-monitor" ? "/validation" : "/findings"} className="btn btn-outline" style={{ height: 28, padding: "2px 10px", fontSize: 12 }}>
+                        {item.id === "asm-world-monitor" ? "Validate" : "Findings"}
                       </Link>
                     </div>
                   </td>
@@ -1162,8 +1173,8 @@ function AssessmentDetail() {
           <Link href="/assessments" className="btn btn-outline">
             All assessments
           </Link>
-          <Link href="/validation" className="btn btn-primary" data-testid="link-run-validation-detail">
-            Run validation <ArrowRight size={14} aria-hidden="true" />
+          <Link href={a.id === "asm-world-monitor" ? "/validation" : "/findings"} className="btn btn-primary" data-testid="link-run-validation-detail">
+            {a.id === "asm-world-monitor" ? "Run validation" : "View findings"} <ArrowRight size={14} aria-hidden="true" />
           </Link>
         </div>
       }
@@ -1189,7 +1200,7 @@ function AssessmentDetail() {
         <div className="card card-pad">
           <div className="eyebrow">Authorization Envelope</div>
           <div className="code-block" style={{ marginTop: 8 }}>
-            {`ASSESSMENT  ${a.id}\nTARGET      ${a.target}\nTIER        ${a.environment}\nBOUNDARY    ${MODE_FIXTURE_LABEL}\nSCOPE_AUTH  ${a.authorization}`}
+            {`ASSESSMENT  ${a.id}\nTARGET      ${a.target}\nTIER        ${a.environment}\nBOUNDARY    Isolated fixture: ${a.target} · Zero production traffic\nSCOPE_AUTH  ${a.authorization}`}
           </div>
         </div>
       </div>
@@ -1243,7 +1254,7 @@ function AssessmentDetail() {
         <div className="card-head">
           <div>
             <h3>Architecture & Components</h3>
-            <p>Mapped against the World Monitor application reference model</p>
+            <p>{a.id === "asm-world-monitor" ? "Mapped against the World Monitor application reference model" : "Isolated synthetic assessment boundary"}</p>
           </div>
           <Link href="/attack-surface" className="btn btn-ghost" style={{ padding: "4px 8px", height: 28, fontSize: 12 }}>
             Open interactive map <ArrowRight size={13} />
@@ -1865,7 +1876,10 @@ function Findings() {
         >
           <option value="all">All states</option>
           <option value="candidate">Candidate</option>
+          <option value="under_validation">Under validation</option>
           <option value="confirmed">Confirmed</option>
+          <option value="remediation_in_progress">Remediation in progress</option>
+          <option value="ready_for_retest">Awaiting re-test</option>
           <option value="verified_fixed">Verified fixed</option>
         </select>
       </div>
@@ -1950,7 +1964,11 @@ function FindingDetail() {
 
   // Determine next action button matching state
   const nextAction =
-    finding.state === "confirmed" && finding.remediationState === "proposed" ? (
+    finding.id !== "finding-001" ? (
+      <Link href={`/assessments/${finding.assessmentId}`} className="btn btn-primary" data-testid="link-next-action">
+        View assessment <ArrowRight size={14} />
+      </Link>
+    ) : finding.state === "confirmed" && finding.remediationState === "proposed" ? (
       <Link href="/remediation" className="btn btn-primary" data-testid="link-next-action">
         Apply remediation <ArrowRight size={14} />
       </Link>
@@ -2061,8 +2079,8 @@ function FindingDetail() {
             <p style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 8, lineHeight: 1.55 }}>
               {finding.remediation}
             </p>
-            <Link href="/remediation" className="btn btn-primary" style={{ width: "100%", marginTop: 16 }} data-testid="link-remediate-finding">
-              Open remediation workflow <ArrowRight size={13} />
+            <Link href={finding.id === "finding-001" ? "/remediation" : `/assessments/${finding.assessmentId}`} className="btn btn-primary" style={{ width: "100%", marginTop: 16 }} data-testid="link-remediate-finding">
+              {finding.id === "finding-001" ? "Open remediation workflow" : "View demo assessment"} <ArrowRight size={13} />
             </Link>
           </div>
         </div>
@@ -2620,7 +2638,7 @@ function Reports() {
   // Generate draft or final report payload
   useEffect(() => {
     generate.mutate(
-      { data: { assessmentId: "asm-world-monitor", format: format as any } },
+      { data: { format: format as any } },
       {
         onSuccess: (res) => setReport(res),
       },
@@ -3197,15 +3215,15 @@ function Guide() {
   let actionLabel = "Phase 1: Establish scope";
 
   if (data) {
-    if (data.verified > 0) {
+    if (data.activeVerified) {
       currentPhase = 4;
       nextHref = "/reports";
       actionLabel = "View audit report";
-    } else if (data.remediationPending > 0) {
+    } else if (data.activeRemediationPending) {
       currentPhase = 3;
       nextHref = "/remediation";
       actionLabel = "Phase 3: Run re-test";
-    } else if (data.confirmed > 0) {
+    } else if (data.activeFindingState === "confirmed") {
       currentPhase = 2;
       nextHref = "/remediation";
       actionLabel = "Phase 2: Apply fix";

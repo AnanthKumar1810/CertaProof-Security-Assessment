@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import crypto from "node:crypto";
+import demoData from "../demo-data.json";
 import {
   ApplyRemediationParams,
   CreateAssessmentBody,
@@ -229,6 +230,7 @@ const createAssessments = () => [
     mode: "simulation",
     createdAt: "2026-09-29T08:42:00.000Z",
   },
+  ...demoData.assessments,
 ];
 
 let assessments = createAssessments();
@@ -439,7 +441,7 @@ function makeFinding() {
     component: "Watchlist service",
     severity: "high",
     severityAssessment: "Provisional fixture severity · assessment pending for any live target",
-    state: confirmed ? "confirmed" : "candidate",
+    state: state.verification?.status === "verified_fixed" ? "verified_fixed" : state.remediation.status !== "proposed" ? "ready_for_retest" : confirmed ? "confirmed" : "candidate",
     origin: confirmed ? "Simulated demonstration" : "Prepared synthetic scenario",
     updatedAt: state.lastMatrix?.createdAt ?? "2026-09-29T08:48:00.000Z",
     description:
@@ -465,6 +467,59 @@ function makeFinding() {
     environment,
     assessmentId: "asm-world-monitor",
     policyVersion: state.originalMatrix?.policyVersion ?? state.lastMatrix?.policyVersion ?? "fixture-policy-v1",
+    disclosure,
+  };
+}
+
+function listFindings() {
+  return [makeFinding(), ...demoData.findings];
+}
+
+function assessmentChecks(assessment: (typeof assessments)[number]) {
+  return assessment.id === "asm-world-monitor"
+    ? { completedChecks: completedChecks(), totalChecks: totalChecks() }
+    : { completedChecks: "completedChecks" in assessment ? assessment.completedChecks : 0, totalChecks: "totalChecks" in assessment ? assessment.totalChecks : totalChecks() };
+}
+
+function assessmentSummary(assessment: (typeof assessments)[number]) {
+  const checks = assessmentChecks(assessment);
+  return { ...assessment, ...checks, progress: Math.round((checks.completedChecks / checks.totalChecks) * 100) };
+}
+
+function assessmentCoverage(assessment: (typeof assessments)[number]) {
+  if (assessment.id === "asm-world-monitor") return getCoverage();
+  const { completedChecks: completed, totalChecks: total } = assessmentChecks(assessment);
+  const planned = coverageTemplate.map((item, index) => Math.floor((index + 1) * total / coverageTemplate.length) - Math.floor(index * total / coverageTemplate.length));
+  let remaining = completed;
+  return coverageTemplate.map((item, index) => {
+    const completedChecks = Math.min(planned[index], remaining);
+    remaining -= completedChecks;
+    return { ...item, plannedChecks: planned[index], completedChecks, evidence: 0, status: completedChecks === planned[index] ? "complete" : completedChecks ? "in_progress" : "not_assessed", limitations: "Seeded synthetic assessment history; no executable trace is attached to this record." };
+  });
+}
+
+function historicalFinding(id: string) {
+  const finding = demoData.findings.find((item) => item.id === id);
+  if (!finding) return undefined;
+  const assessment = assessments.find((item) => item.id === finding.assessmentId);
+  return {
+    ...finding,
+    severityAssessment: "Synthetic demo severity classification",
+    description: `This seeded historical ${finding.state.replaceAll("_", " ")} record belongs to the isolated ${assessment?.name ?? "demo"} assessment. It is not a claim about a live service.`,
+    rationale: "Illustrates a controlled authorization boundary check using synthetic identities and resources.",
+    prerequisites: "Isolated demo fixture only; no production identity or target is involved.",
+    expected: "Access is limited to the authorized synthetic identity and resource.",
+    actual: "Historical demo status; no executable trace is attached to this record.",
+    steps: ["Review the synthetic assessment boundary and recorded demo status."],
+    cause: "Historical synthetic scenario; root cause is not established for a live system.",
+    rootCause: "Historical synthetic scenario; root cause is not established for a live system.",
+    impact: "Illustrative fixture impact only; no production impact is asserted.",
+    remediation: "Use the assessment's controlled fixture to validate and document any fix.",
+    evidence: [],
+    verification: [],
+    remediationState: finding.state === "ready_for_retest" ? "ready_for_retest" : "proposed",
+    environment: assessment?.target ?? "demo.local",
+    policyVersion: "synthetic-demo-history",
     disclosure,
   };
 }
@@ -515,6 +570,7 @@ function getChecklist() {
 
 function getDashboard() {
   const finding = makeFinding();
+  const findings = listFindings();
   const verified = state.verification?.status === "verified_fixed";
   const remediationPending = state.remediation.status !== "proposed" && !verified;
   const checklist = getChecklist();
@@ -557,13 +613,19 @@ function getDashboard() {
           origin: "Workspace",
           time: "2026-09-29T08:42:00.000Z",
         },
+    { id: "activity-history-1", type: "verification", title: "Synthetic fix verification completed", detail: "Evidence Portal · Session Boundary Review", origin: "Synthetic regression case", time: "2026-09-28T15:00:00.000Z" },
+    { id: "activity-history-2", type: "remediation", title: "Re-test requested", detail: "Reporting API · Object Access Review", origin: "Controlled fixture execution", time: "2026-09-28T09:00:00.000Z" },
+    { id: "activity-history-3", type: "validation", title: "Demo finding recorded", detail: "Admin Console · Privilege Review", origin: "Demo validation trace", time: "2026-09-27T14:00:00.000Z" },
   ].filter(Boolean);
   return {
-    openAssessments: assessments.filter((item) => item.status !== "complete").length,
-    candidates: finding.state === "candidate" ? 1 : 0,
-    confirmed: finding.state === "confirmed" ? 1 : 0,
-    remediationPending: remediationPending ? 1 : 0,
-    verified: verified ? 1 : 0,
+    openAssessments: assessments.filter((item) => !["complete", "verified"].includes(item.status)).length,
+    candidates: findings.length,
+    confirmed: findings.filter((item) => item.state === "confirmed").length,
+    remediationPending: findings.filter((item) => item.state === "ready_for_retest").length,
+    verified: findings.filter((item) => item.state === "verified_fixed").length,
+    activeFindingState: finding.state,
+    activeRemediationPending: remediationPending,
+    activeVerified: verified,
     completedChecks: completedChecks(),
     totalChecks: totalChecks(),
     progress: Math.round((completedChecks() / totalChecks()) * 100),
@@ -604,7 +666,7 @@ function getWorkspace() {
 
 router.get("/workspace", (_req, res) => res.json(getWorkspace()));
 router.get("/assessments", (_req, res) =>
-  res.json(assessments.map((assessment) => ({ ...assessment, progress: Math.round((completedChecks() / totalChecks()) * 100) }))),
+  res.json(assessments.map(assessmentSummary)),
 );
 
 router.post("/assessments", (req, res) => {
@@ -623,7 +685,7 @@ router.post("/assessments", (req, res) => {
     createdAt: now(),
   };
   assessments.unshift(assessment);
-  res.status(201).json({ ...assessment, progress: 0 });
+  res.status(201).json(assessmentSummary(assessment));
 });
 
 router.get("/assessments/:assessmentId", (req, res) => {
@@ -634,12 +696,9 @@ router.get("/assessments/:assessmentId", (req, res) => {
     return;
   }
   res.json({
-    ...assessment,
-    progress: Math.round((completedChecks() / totalChecks()) * 100),
-    completedChecks: completedChecks(),
-    totalChecks: totalChecks(),
-    coverage: getCoverage(),
-    components,
+    ...assessmentSummary(assessment),
+    coverage: assessmentCoverage(assessment),
+    components: assessment.id === "asm-world-monitor" ? components : [{ id: "component-service", name: assessment.name.split(" · ")[0], purpose: "Isolated synthetic fixture boundary for this historical demo assessment.", interfaces: [assessment.target] }],
     modeLabel,
   });
 });
@@ -661,11 +720,13 @@ router.post("/validation/matrix", (_req, res) => {
   res.status(201).json(runMatrix());
 });
 
-router.get("/findings", (_req, res) => res.json([makeFinding()]));
+router.get("/findings", (_req, res) => res.json(listFindings()));
 router.get("/findings/:findingId", (req, res) => {
   const { findingId } = GetFindingParams.parse(req.params);
   if (findingId !== "finding-001") {
-    res.status(404).json({ error: "Finding not found" });
+    const finding = historicalFinding(findingId);
+    if (finding) res.json(finding);
+    else res.status(404).json({ error: "Finding not found" });
     return;
   }
   res.json(makeFinding());
