@@ -5,13 +5,26 @@
  * CertaProof authorized security assessment workspace API
  * OpenAPI spec version: 0.1.0
  */
+import type { Assertion } from './assertion';
+import type { ValidationRunOutcome } from './validationRunOutcome';
 import type { ValidationRunStatus } from './validationRunStatus';
 
 export interface ValidationRun {
   id: string;
+  matrixId: string;
   caseId: string;
+  identity: string;
+  identityAlias: string;
+  owner: string;
+  resourceId: string;
+  policy: string;
+  policyVersion: string;
   status: ValidationRunStatus;
-  assertions: string[];
+  outcome: ValidationRunOutcome;
+  expectedResponse: string;
+  actualResponse: string;
+  protectedContentReturned: boolean;
+  assertions: Assertion[];
   request: string;
   response: string;
   origin: string;

@@ -12,4 +12,7 @@ import type { SurfaceComponent } from './surfaceComponent';
 export type AssessmentDetail = Assessment & {
   coverage: Coverage[];
   components: SurfaceComponent[];
+  completedChecks: number;
+  totalChecks: number;
+  modeLabel: string;
 };

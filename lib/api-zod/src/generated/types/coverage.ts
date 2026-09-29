@@ -10,5 +10,8 @@ import type { CoverageStatus } from './coverageStatus';
 export interface Coverage {
   area: string;
   status: CoverageStatus;
-  checks: number;
+  plannedChecks: number;
+  completedChecks: number;
+  evidence: number;
+  limitations: string;
 }

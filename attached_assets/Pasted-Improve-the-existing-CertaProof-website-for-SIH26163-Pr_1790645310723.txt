@@ -1,0 +1,217 @@
+Improve the existing CertaProof website for SIH26163. Preserve its navy sidebar, light workspace, teal actions, branding, and page structure. Fix the current implementation rather than rebuilding it. Prioritize the functional corrections below before cosmetic changes.
+
+The product must demonstrate:
+Scope → Assess → Validate → Evidence → Impact → Remediate → Re-test → Report.
+
+## 1. Repair shared state and persistence — highest priority
+
+Observed problems:
+- The B→A validation reports protected content returned, but the finding remains “candidate.”
+- Re-test shows “verified fixed,” but Overview still shows zero verified fixes.
+- Refresh returns remediation to “proposed” and verification to “inconclusive.”
+- Overview says “controlled identity mismatch confirmed” before any confirmation.
+- Initial/loading counts can differ from the loaded assessment.
+
+Use one shared assessment state for Overview, Findings, Validation, Evidence, Remediation, and Reports. Persist it across navigation and refresh. Do not replace completed work with fallback seed data when requests fail.
+
+Keep these states separate:
+Validation: Candidate → Validating → Confirmed / Rejected / Inconclusive.
+Remediation: Proposed → Applied → Ready for re-test.
+Verification: Not run → Running → Verified fixed / Still reproducible / Inconclusive.
+
+“Not run” is not “Inconclusive.”
+A control-test failure is not an execution error.
+Applying remediation is not verification.
+
+Calculate counts, latest activity, current step, and recommended next action from records. Show a loading skeleton while records load rather than invented defaults.
+
+## 2. Complete the authorization demonstration
+
+Preserve the working case-selection interaction.
+
+Provide “Run full matrix” and execute all four cases:
+A→A: allow.
+A→B: deny.
+B→B: allow.
+B→A: deny.
+
+In the vulnerable scenario, B→A returns A’s protected fixture content. Confirm the fixture finding only when the ownership policy is violated, protected content is returned, and legitimate-owner baselines succeed.
+
+Before execution, cases must say “Not run,” not “passed.”
+
+Separate expected behavior from observed results. If showing a prepared scenario before execution, label it “Scenario preview.”
+
+For each run, show:
+- Unique run ID and timestamp.
+- Identity and resource.
+- Expected and actual response.
+- Protected-content assertion.
+- Case outcome.
+- Evidence origin.
+
+Do not show green checkmarks beside “Failed” assertions. Use clear Passed, Policy failed, and Execution error indicators.
+
+After successful validation, update the finding to “Confirmed · simulated fixture” when simulation is the actual execution mode.
+
+## 3. Make the scenario consistent everywhere
+
+The current finding concerns cross-user watchlist disclosure, but remediation says “Bind subject before export authorization,” and the map describes Export API tenant binding.
+
+Use the watchlist scenario consistently across validation, finding details, evidence, remediation, and reports.
+
+Use a complete synthetic endpoint:
+GET /demo-api/watchlists/watchlist-a
+
+Define:
+- Analyst A owns Watchlist A.
+- Analyst B owns Watchlist B.
+- Server-side authorization must check permission on the requested watchlist.
+
+Replace unrelated exportFor(request.tenantId) code with illustrative watchlist authorization logic. Derive identity from the authenticated context and resource ownership from trusted stored data.
+
+Label all fixture endpoints and code as synthetic examples.
+
+## 4. Make re-testing prove the fix
+
+“Apply demo fix” should update only the synthetic fixture and mark verification pending.
+
+“Run re-test” must visibly execute all four cases again:
+- Both owners retain access.
+- Both cross-user requests are denied.
+- Denied responses contain no protected watchlist content.
+
+Blocking all users must fail verification.
+
+Do not mark the issue fixed after changing a label or testing only one response status.
+
+Show original and re-test run IDs, policy versions, timestamps, assertions, and evidence side by side. Preserve the original failure.
+
+Disable Apply fix after application, and explain prerequisites when re-test is unavailable.
+
+## 5. Replace the incorrect coverage categories
+
+The assessment currently shows Identity & authorization, Data ingestion, Export boundaries, and Operations & audit.
+
+Use the seven SIH26163 areas:
+1. Authentication and session management.
+2. Authorization and access control.
+3. Input validation and data handling.
+4. API security.
+5. Client-side security controls.
+6. Secure communication mechanisms.
+7. Data storage and privacy protections.
+
+For each, show planned checks, completed checks, evidence, and limitations.
+
+Use Not assessed, Planned, In progress, or Demonstrated in fixture. Do not mark a whole category “confirmed” or “verified.”
+
+Remove unsupported counts such as “8 controlled checks” unless those checks exist and can be inspected.
+
+Replace unexplained “38% mapped” with factual completed/total counts or a documented calculation.
+
+## 6. Correct the attack-surface representation
+
+Keep the fixture diagram separate from the World Monitor reference architecture.
+
+Reference paths:
+Browser → Edge/API → Service/Relay → Cache/Data → External sources.
+Tauri renderer → IPC → Node.js sidecar → Cloud/API.
+
+Include REST/MCP interfaces where applicable. Show labeled trust boundaries and component relationships.
+
+Clicking a component should display its purpose, interfaces, applicable controls, related checks, evidence, and coverage limitations.
+
+Do not label seeded components “discovered.” Use Reference model unless actual inspection establishes discovery.
+
+Remove statements about a “current confirmed finding” when the linked finding is still a candidate.
+
+Desktop coverage is an additional solution feature; it does not replace the seven required PS areas.
+
+## 7. Fix the evidence viewer
+
+Observed issues:
+- Evidence uses “run-pending” after execution.
+- The request omits the watchlist identifier.
+- Request/response text displays literal backslash-n sequences.
+- Assertions say “protected content present in denied response” despite an observed 200 response.
+
+Generate evidence from the selected run with a real run ID. Render actual line breaks in a readable monospace block.
+
+Say:
+“Protected content returned although policy required denial.”
+
+Include:
+Assessment ID, finding ID, case ID, run ID, identity alias, resource ID, timestamp, environment, revision when known, expected/observed behavior, assertions, and origin.
+
+Provide working preview, copy, and download actions. Preserve separate validation and re-test artifacts. If displaying a hash, calculate it from the downloadable artifact.
+
+Redact secrets without hiding every detail needed to establish ownership and protected-content disclosure.
+
+## 8. Finish finding details and reports
+
+Finding details need all PS deliverables:
+Title, description, affected component, severity, reproduction steps, controlled PoC, business impact, and remediation.
+
+Add:
+Preconditions, technical cause, evidence links, environment, origin, and verification history.
+
+Label “High” provisional unless supported by a severity assessment. Show a consistent CVSS v4.0 score/vector or “Assessment pending.”
+
+Report generation currently shows “ready” without a visible downloadable result. Implement genuine:
+- HTML download.
+- JSON download.
+- Valid SARIF download.
+- PDF output or clearly labeled Print / Save as PDF.
+
+Show a report preview with scope, seven-area coverage, limitations, findings, evidence, impact, remediation, and re-test results.
+
+Generate reports from current shared state. Provide a visible Download button and meaningful error feedback.
+
+Preserve the disclosure that synthetic results are not findings against live World Monitor.
+
+## 9. Correct integration and mode labels
+
+The Integrations page focuses on Jira and GitHub and uses finding statuses such as “candidate” and “inconclusive” for connections.
+
+Prioritize our chosen stack:
+Semgrep, OWASP ZAP, Playwright, Gitleaks, OSV-Scanner, custom TypeScript validation engine, Redis/BullMQ, PostgreSQL/Prisma, and evidence storage.
+
+Use integration statuses:
+Connected, Demo adapter, Not configured, Unavailable.
+
+Keep Jira/GitHub optional and secondary.
+
+Show the actual mode consistently across header, runs, evidence, and integrations. Do not claim local fixture execution while the result is labeled simulated.
+
+Investigate the Settings “fixture fallback” state. Display service failures clearly; do not silently substitute canned results.
+
+Show the intended architecture separately from what is actually implemented. AI may explain evidence and suggest remediation; it must not confirm vulnerabilities or close findings.
+
+## 10. Polish the interface
+
+Keep the current design and make these focused changes:
+
+- Fix cramped metric labels: large number on its own line, supporting text below.
+- Fix the clipped logo subtitle; use a properly sized logo or text treatment.
+- Use SIH26163 prominently. Replace confusing WM-2025-04 branding or identify it clearly as an assessment ID.
+- Replace “The story judges should follow” with “Recommended next step.”
+- Replace the unexplained 82% evidence gauge with a factual checklist: scope, identities, validation, evidence, impact, remediation, re-test.
+- Use readable body text and stronger contrast for small metadata.
+- Use human-readable dates; keep full timestamps in evidence details.
+- Show clear selection styling for matrix cases and report formats.
+- Make the header “New assessment” open the creation flow directly.
+- Add an active-assessment selector and preserve context across pages.
+- Add accessible labels, keyboard focus, loading/error states, and responsive table handling.
+- Keep one compact demo badge and a clear report disclosure without repeating oversized warnings.
+- Provide Reset demo with confirmation and a guided path through validation, evidence, fix, re-test, and export.
+
+## Acceptance
+
+Verify this exact journey:
+Fresh candidate → Full matrix → Confirmed fixture finding → Evidence → Apply fix → Full re-test → Verified fix → Download report → Refresh.
+
+Counts, statuses, selected assessment, and evidence must remain consistent throughout. Verify failures cannot produce success states.
+
+Do not claim the actual PS is satisfied by a synthetic fixture. Completion of the real assessment still requires an authorized, valid World Monitor vulnerability with supporting evidence.
+
+Implement these fixes, verify the workflow, and summarize what works and which integrations remain unavailable.

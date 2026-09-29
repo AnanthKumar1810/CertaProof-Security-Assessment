@@ -6,13 +6,24 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Activity } from './activity';
+import type { Assessment } from './assessment';
+import type { ChecklistItem } from './checklistItem';
+import type { Coverage } from './coverage';
 
 export interface Dashboard {
   openAssessments: number;
   candidates: number;
   confirmed: number;
+  remediationPending: number;
   verified: number;
+  completedChecks: number;
+  totalChecks: number;
   progress: number;
+  currentStep: string;
   activity: Activity[];
+  checklist: ChecklistItem[];
+  coverage: Coverage[];
+  assessment: Assessment;
+  modeLabel: string;
   nextAction: string;
 }

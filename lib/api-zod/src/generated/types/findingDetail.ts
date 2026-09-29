@@ -7,6 +7,7 @@
  */
 import type { Evidence } from './evidence';
 import type { Finding } from './finding';
+import type { FindingDetailRemediationState } from './findingDetailRemediationState';
 import type { Verification } from './verification';
 
 export type FindingDetail = Finding & {
@@ -21,4 +22,10 @@ export type FindingDetail = Finding & {
   remediation: string;
   evidence: Evidence[];
   verification: Verification[];
+  remediationState?: FindingDetailRemediationState;
+  remediationAppliedAt?: string;
+  environment?: string;
+  assessmentId?: string;
+  policyVersion?: string;
+  disclosure?: string;
 };

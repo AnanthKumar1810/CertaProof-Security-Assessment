@@ -10,9 +10,8 @@ export type CoverageStatus = typeof CoverageStatus[keyof typeof CoverageStatus];
 
 
 export const CoverageStatus = {
+  planned: 'planned',
   not_assessed: 'not_assessed',
   in_progress: 'in_progress',
-  candidate: 'candidate',
-  confirmed: 'confirmed',
-  verified: 'verified',
+  demonstrated_fixture: 'demonstrated_fixture',
 } as const;

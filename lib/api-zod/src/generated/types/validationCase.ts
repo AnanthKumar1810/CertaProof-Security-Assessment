@@ -5,13 +5,22 @@
  * CertaProof authorized security assessment workspace API
  * OpenAPI spec version: 0.1.0
  */
+import type { ValidationCaseStatus } from './validationCaseStatus';
+import type { ValidationRun } from './validationRun';
 
 export interface ValidationCase {
   id: string;
   identity: string;
+  requesterAlias: string;
   owner: string;
+  ownerAlias: string;
+  resourceId: string;
   policy: string;
   expected: string;
   observed: string;
+  status: ValidationCaseStatus;
+  lastRunId?: string;
+  lastRunAt?: string;
+  latestRun?: ValidationRun | null;
   vulnerable: boolean;
 }

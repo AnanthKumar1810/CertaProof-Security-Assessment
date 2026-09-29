@@ -5,6 +5,12 @@
  * CertaProof authorized security assessment workspace API
  * OpenAPI spec version: 0.1.0
  */
+import type { Assessment } from './assessment';
+import type { Coverage } from './coverage';
+import type { Evidence } from './evidence';
+import type { FindingDetail } from './findingDetail';
+import type { Remediation } from './remediation';
+import type { Verification } from './verification';
 
 export interface Report {
   id: string;
@@ -12,4 +18,12 @@ export interface Report {
   status: string;
   disclosure: string;
   generatedAt: string;
+  assessment?: Assessment;
+  modeLabel?: string;
+  coverage?: Coverage[];
+  limitations?: string;
+  findings?: FindingDetail[];
+  evidence?: Evidence[];
+  remediation?: Remediation;
+  verification?: Verification | null;
 }

@@ -5,13 +5,17 @@
  * CertaProof authorized security assessment workspace API
  * OpenAPI spec version: 0.1.0
  */
+import type { Assertion } from './assertion';
 import type { VerificationStatus } from './verificationStatus';
 
 export interface Verification {
   id: string;
   findingId: string;
   status: VerificationStatus;
-  assertions: string[];
+  originalRunIds: string[];
+  retestRunIds: string[];
+  policyVersion: string;
+  assertions: Assertion[];
   createdAt: string;
   origin: string;
 }

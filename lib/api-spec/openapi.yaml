@@ -131,6 +131,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ValidationRun"
+  /validation/matrix:
+    post:
+      operationId: runValidationMatrix
+      tags: [validation]
+      summary: Run the complete four-case authorization matrix
+      responses:
+        "201":
+          description: Matrix and its validation runs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationMatrix"
   /findings:
     get:
       operationId: listFindings
@@ -219,6 +231,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Report"
+  /demo/reset:
+    post:
+      operationId: resetDemo
+      tags: [assessments]
+      summary: Reset the synthetic assessment state
+      responses:
+        "200":
+          description: Reset confirmation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResetResponse"
 components:
   parameters:
     AssessmentId:
@@ -264,7 +288,7 @@ components:
       allOf:
         - $ref: "#/components/schemas/Assessment"
         - type: object
-          required: [coverage, components]
+          required: [coverage, components, completedChecks, totalChecks, modeLabel]
           properties:
             coverage:
               type: array
@@ -272,13 +296,19 @@ components:
             components:
               type: array
               items: { $ref: "#/components/schemas/SurfaceComponent" }
+            completedChecks: { type: integer }
+            totalChecks: { type: integer }
+            modeLabel: { type: string }
     Coverage:
       type: object
-      required: [area, status, checks]
+      required: [area, status, plannedChecks, completedChecks, evidence, limitations]
       properties:
         area: { type: string }
-        status: { type: string, enum: [not_assessed, in_progress, candidate, confirmed, verified] }
-        checks: { type: integer }
+        status: { type: string, enum: [planned, not_assessed, in_progress, demonstrated_fixture] }
+        plannedChecks: { type: integer }
+        completedChecks: { type: integer }
+        evidence: { type: integer }
+        limitations: { type: string }
     SurfaceComponent:
       type: object
       required: [id, name, purpose, kind, source]
@@ -293,16 +323,29 @@ components:
           items: { type: string }
     Dashboard:
       type: object
-      required: [openAssessments, candidates, confirmed, verified, progress, activity, nextAction]
+      required: [openAssessments, candidates, confirmed, remediationPending, verified, completedChecks, totalChecks, progress, currentStep, nextAction, activity, checklist, coverage, assessment, modeLabel]
       properties:
         openAssessments: { type: integer }
         candidates: { type: integer }
         confirmed: { type: integer }
+        remediationPending: { type: integer }
         verified: { type: integer }
+        completedChecks: { type: integer }
+        totalChecks: { type: integer }
         progress: { type: integer }
+        currentStep: { type: string }
         activity:
           type: array
           items: { $ref: "#/components/schemas/Activity" }
+        checklist:
+          type: array
+          items: { $ref: "#/components/schemas/ChecklistItem" }
+        coverage:
+          type: array
+          items: { $ref: "#/components/schemas/Coverage" }
+        assessment:
+          $ref: "#/components/schemas/Assessment"
+        modeLabel: { type: string }
         nextAction: { type: string }
     Activity:
       type: object
@@ -314,16 +357,34 @@ components:
         detail: { type: string }
         origin: { type: string }
         time: { type: string }
+    ChecklistItem:
+      type: object
+      required: [key, label, status, detail]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        status: { type: string, enum: [complete, pending] }
+        detail: { type: string }
     ValidationCase:
       type: object
-      required: [id, identity, owner, policy, expected, observed, vulnerable]
+      required: [id, identity, requesterAlias, owner, ownerAlias, resourceId, policy, expected, observed, status, vulnerable]
       properties:
         id: { type: string }
         identity: { type: string }
+        requesterAlias: { type: string }
         owner: { type: string }
+        ownerAlias: { type: string }
+        resourceId: { type: string }
         policy: { type: string }
         expected: { type: string }
         observed: { type: string }
+        status: { type: string, enum: [not_run, passed, failed, inconclusive] }
+        lastRunId: { type: string }
+        lastRunAt: { type: string }
+        latestRun:
+          anyOf:
+            - $ref: "#/components/schemas/ValidationRun"
+            - type: "null"
         vulnerable: { type: boolean }
     ValidationInput:
       type: object
@@ -332,18 +393,46 @@ components:
         caseId: { type: string }
     ValidationRun:
       type: object
-      required: [id, caseId, status, assertions, request, response, origin, createdAt]
+      required: [id, matrixId, caseId, identity, identityAlias, owner, resourceId, policy, policyVersion, status, outcome, expectedResponse, actualResponse, protectedContentReturned, assertions, request, response, origin, createdAt]
       properties:
         id: { type: string }
+        matrixId: { type: string }
         caseId: { type: string }
+        identity: { type: string }
+        identityAlias: { type: string }
+        owner: { type: string }
+        resourceId: { type: string }
+        policy: { type: string }
+        policyVersion: { type: string }
         status: { type: string, enum: [passed, failed, inconclusive] }
+        outcome: { type: string, enum: [passed, policy_failed, execution_error] }
+        expectedResponse: { type: string }
+        actualResponse: { type: string }
+        protectedContentReturned: { type: boolean }
         assertions:
           type: array
-          items: { type: string }
+          items: { $ref: "#/components/schemas/Assertion" }
         request: { type: string }
         response: { type: string }
         origin: { type: string }
         createdAt: { type: string }
+    Assertion:
+      type: object
+      required: [label, status, detail]
+      properties:
+        label: { type: string }
+        status: { type: string, enum: [passed, failed, error] }
+        detail: { type: string }
+    ValidationMatrix:
+      type: object
+      required: [id, policyVersion, createdAt, runs]
+      properties:
+        id: { type: string }
+        policyVersion: { type: string }
+        createdAt: { type: string }
+        runs:
+          type: array
+          items: { $ref: "#/components/schemas/ValidationRun" }
     Finding:
       type: object
       required: [id, title, category, component, severity, state, origin, updatedAt]
@@ -379,19 +468,31 @@ components:
             verification:
               type: array
               items: { $ref: "#/components/schemas/Verification" }
+            remediationState: { type: string, enum: [proposed, applied, ready_for_retest] }
+            remediationAppliedAt: { type: string }
+            environment: { type: string }
+            assessmentId: { type: string }
+            policyVersion: { type: string }
+            disclosure: { type: string }
     Evidence:
       type: object
-      required: [id, findingId, testId, runId, environment, origin, timestamp, revision, redaction, request, response, assertions]
+      required: [id, findingId, testId, runId, assessmentId, identityAlias, resourceId, environment, origin, timestamp, revision, redaction, expected, observed, request, response, assertions]
       properties:
         id: { type: string }
         findingId: { type: string }
         testId: { type: string }
         runId: { type: string }
+        verificationId: { type: string }
+        assessmentId: { type: string }
+        identityAlias: { type: string }
+        resourceId: { type: string }
         environment: { type: string }
         origin: { type: string }
         timestamp: { type: string }
         revision: { type: string }
         redaction: { type: string }
+        expected: { type: string }
+        observed: { type: string }
         request: { type: string }
         response: { type: string }
         assertions:
@@ -406,14 +507,21 @@ components:
         message: { type: string }
     Verification:
       type: object
-      required: [id, findingId, status, assertions, createdAt, origin]
+      required: [id, findingId, status, originalRunIds, retestRunIds, policyVersion, assertions, createdAt, origin]
       properties:
         id: { type: string }
         findingId: { type: string }
         status: { type: string, enum: [verified_fixed, still_reproducible, inconclusive] }
-        assertions:
+        originalRunIds:
           type: array
           items: { type: string }
+        retestRunIds:
+          type: array
+          items: { type: string }
+        policyVersion: { type: string }
+        assertions:
+          type: array
+          items: { $ref: "#/components/schemas/Assertion" }
         createdAt: { type: string }
         origin: { type: string }
     ReportInput:
@@ -430,6 +538,29 @@ components:
         status: { type: string }
         disclosure: { type: string }
         generatedAt: { type: string }
+        assessment: { $ref: "#/components/schemas/Assessment" }
+        modeLabel: { type: string }
+        coverage:
+          type: array
+          items: { $ref: "#/components/schemas/Coverage" }
+        limitations: { type: string }
+        findings:
+          type: array
+          items: { $ref: "#/components/schemas/FindingDetail" }
+        evidence:
+          type: array
+          items: { $ref: "#/components/schemas/Evidence" }
+        remediation: { $ref: "#/components/schemas/Remediation" }
+        verification:
+          anyOf:
+            - $ref: "#/components/schemas/Verification"
+            - type: "null"
+    ResetResponse:
+      type: object
+      required: [status, message]
+      properties:
+        status: { type: string }
+        message: { type: string }
     Workspace:
       type: object
       required: [product, assessment, mode, integrations]

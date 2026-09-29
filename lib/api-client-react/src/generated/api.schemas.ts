@@ -58,17 +58,19 @@ export type CoverageStatus = typeof CoverageStatus[keyof typeof CoverageStatus];
 
 
 export const CoverageStatus = {
+  planned: 'planned',
   not_assessed: 'not_assessed',
   in_progress: 'in_progress',
-  candidate: 'candidate',
-  confirmed: 'confirmed',
-  verified: 'verified',
+  demonstrated_fixture: 'demonstrated_fixture',
 } as const;
 
 export interface Coverage {
   area: string;
   status: CoverageStatus;
-  checks: number;
+  plannedChecks: number;
+  completedChecks: number;
+  evidence: number;
+  limitations: string;
 }
 
 export type SurfaceComponentSource = typeof SurfaceComponentSource[keyof typeof SurfaceComponentSource];
@@ -91,6 +93,9 @@ export interface SurfaceComponent {
 export type AssessmentDetail = Assessment & {
   coverage: Coverage[];
   components: SurfaceComponent[];
+  completedChecks: number;
+  totalChecks: number;
+  modeLabel: string;
 };
 
 export interface Activity {
@@ -102,29 +107,48 @@ export interface Activity {
   time: string;
 }
 
+export type ChecklistItemStatus = typeof ChecklistItemStatus[keyof typeof ChecklistItemStatus];
+
+
+export const ChecklistItemStatus = {
+  complete: 'complete',
+  pending: 'pending',
+} as const;
+
+export interface ChecklistItem {
+  key: string;
+  label: string;
+  status: ChecklistItemStatus;
+  detail: string;
+}
+
 export interface Dashboard {
   openAssessments: number;
   candidates: number;
   confirmed: number;
+  remediationPending: number;
   verified: number;
+  completedChecks: number;
+  totalChecks: number;
   progress: number;
+  currentStep: string;
   activity: Activity[];
+  checklist: ChecklistItem[];
+  coverage: Coverage[];
+  assessment: Assessment;
+  modeLabel: string;
   nextAction: string;
 }
 
-export interface ValidationCase {
-  id: string;
-  identity: string;
-  owner: string;
-  policy: string;
-  expected: string;
-  observed: string;
-  vulnerable: boolean;
-}
+export type ValidationCaseStatus = typeof ValidationCaseStatus[keyof typeof ValidationCaseStatus];
 
-export interface ValidationInput {
-  caseId: string;
-}
+
+export const ValidationCaseStatus = {
+  not_run: 'not_run',
+  passed: 'passed',
+  failed: 'failed',
+  inconclusive: 'inconclusive',
+} as const;
 
 export type ValidationRunStatus = typeof ValidationRunStatus[keyof typeof ValidationRunStatus];
 
@@ -135,15 +159,78 @@ export const ValidationRunStatus = {
   inconclusive: 'inconclusive',
 } as const;
 
+export type ValidationRunOutcome = typeof ValidationRunOutcome[keyof typeof ValidationRunOutcome];
+
+
+export const ValidationRunOutcome = {
+  passed: 'passed',
+  policy_failed: 'policy_failed',
+  execution_error: 'execution_error',
+} as const;
+
+export type AssertionStatus = typeof AssertionStatus[keyof typeof AssertionStatus];
+
+
+export const AssertionStatus = {
+  passed: 'passed',
+  failed: 'failed',
+  error: 'error',
+} as const;
+
+export interface Assertion {
+  label: string;
+  status: AssertionStatus;
+  detail: string;
+}
+
 export interface ValidationRun {
   id: string;
+  matrixId: string;
   caseId: string;
+  identity: string;
+  identityAlias: string;
+  owner: string;
+  resourceId: string;
+  policy: string;
+  policyVersion: string;
   status: ValidationRunStatus;
-  assertions: string[];
+  outcome: ValidationRunOutcome;
+  expectedResponse: string;
+  actualResponse: string;
+  protectedContentReturned: boolean;
+  assertions: Assertion[];
   request: string;
   response: string;
   origin: string;
   createdAt: string;
+}
+
+export interface ValidationCase {
+  id: string;
+  identity: string;
+  requesterAlias: string;
+  owner: string;
+  ownerAlias: string;
+  resourceId: string;
+  policy: string;
+  expected: string;
+  observed: string;
+  status: ValidationCaseStatus;
+  lastRunId?: string;
+  lastRunAt?: string;
+  latestRun?: ValidationRun | null;
+  vulnerable: boolean;
+}
+
+export interface ValidationInput {
+  caseId: string;
+}
+
+export interface ValidationMatrix {
+  id: string;
+  policyVersion: string;
+  createdAt: string;
+  runs: ValidationRun[];
 }
 
 export type FindingSeverity = typeof FindingSeverity[keyof typeof FindingSeverity];
@@ -177,16 +264,31 @@ export interface Finding {
   updatedAt: string;
 }
 
+export type FindingDetailRemediationState = typeof FindingDetailRemediationState[keyof typeof FindingDetailRemediationState];
+
+
+export const FindingDetailRemediationState = {
+  proposed: 'proposed',
+  applied: 'applied',
+  ready_for_retest: 'ready_for_retest',
+} as const;
+
 export interface Evidence {
   id: string;
   findingId: string;
   testId: string;
   runId: string;
+  verificationId?: string;
+  assessmentId: string;
+  identityAlias: string;
+  resourceId: string;
   environment: string;
   origin: string;
   timestamp: string;
   revision: string;
   redaction: string;
+  expected: string;
+  observed: string;
   request: string;
   response: string;
   assertions: string[];
@@ -205,7 +307,10 @@ export interface Verification {
   id: string;
   findingId: string;
   status: VerificationStatus;
-  assertions: string[];
+  originalRunIds: string[];
+  retestRunIds: string[];
+  policyVersion: string;
+  assertions: Assertion[];
   createdAt: string;
   origin: string;
 }
@@ -222,6 +327,12 @@ export type FindingDetail = Finding & {
   remediation: string;
   evidence: Evidence[];
   verification: Verification[];
+  remediationState?: FindingDetailRemediationState;
+  remediationAppliedAt?: string;
+  environment?: string;
+  assessmentId?: string;
+  policyVersion?: string;
+  disclosure?: string;
 };
 
 export type RemediationStatus = typeof RemediationStatus[keyof typeof RemediationStatus];
@@ -259,6 +370,19 @@ export interface Report {
   status: string;
   disclosure: string;
   generatedAt: string;
+  assessment?: Assessment;
+  modeLabel?: string;
+  coverage?: Coverage[];
+  limitations?: string;
+  findings?: FindingDetail[];
+  evidence?: Evidence[];
+  remediation?: Remediation;
+  verification?: Verification | null;
+}
+
+export interface ResetResponse {
+  status: string;
+  message: string;
 }
 
 export type IntegrationStatus = typeof IntegrationStatus[keyof typeof IntegrationStatus];

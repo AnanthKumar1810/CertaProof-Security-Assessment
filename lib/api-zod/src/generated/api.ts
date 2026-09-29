@@ -132,8 +132,11 @@ export const GetAssessmentResponse = zod.object({
 })).and(zod.object({
   "coverage": zod.array(zod.object({
   "area": zod.string(),
-  "status": zod.enum(['not_assessed', 'in_progress', 'candidate', 'confirmed', 'verified']),
-  "checks": zod.number().int()
+  "status": zod.enum(['planned', 'not_assessed', 'in_progress', 'demonstrated_fixture']),
+  "plannedChecks": zod.number().int(),
+  "completedChecks": zod.number().int(),
+  "evidence": zod.number().int(),
+  "limitations": zod.string()
 })),
   "components": zod.array(zod.object({
   "id": zod.string(),
@@ -142,19 +145,31 @@ export const GetAssessmentResponse = zod.object({
   "kind": zod.string(),
   "source": zod.enum(['reference_model', 'discovered']),
   "interfaces": zod.array(zod.string()).optional()
-}))
+})),
+  "completedChecks": zod.number().int(),
+  "totalChecks": zod.number().int(),
+  "modeLabel": zod.string()
 }))
 
 
 /**
  * @summary Get overview metrics and activity
  */
+
+
+
+
+
 export const GetDashboardResponse = zod.object({
   "openAssessments": zod.number().int(),
   "candidates": zod.number().int(),
   "confirmed": zod.number().int(),
+  "remediationPending": zod.number().int(),
   "verified": zod.number().int(),
+  "completedChecks": zod.number().int(),
+  "totalChecks": zod.number().int(),
   "progress": zod.number().int(),
+  "currentStep": zod.string(),
   "activity": zod.array(zod.object({
   "id": zod.string(),
   "type": zod.string(),
@@ -163,6 +178,33 @@ export const GetDashboardResponse = zod.object({
   "origin": zod.string(),
   "time": zod.string()
 })),
+  "checklist": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "status": zod.enum(['complete', 'pending']),
+  "detail": zod.string()
+})),
+  "coverage": zod.array(zod.object({
+  "area": zod.string(),
+  "status": zod.enum(['planned', 'not_assessed', 'in_progress', 'demonstrated_fixture']),
+  "plannedChecks": zod.number().int(),
+  "completedChecks": zod.number().int(),
+  "evidence": zod.number().int(),
+  "limitations": zod.string()
+})),
+  "assessment": zod.object({
+  "name": zod.string().min(1),
+  "target": zod.string().min(1),
+  "environment": zod.enum(['demo', 'local', 'authorized']),
+  "authorization": zod.string().min(1)
+}).and(zod.object({
+  "id": zod.string(),
+  "status": zod.enum(['in_progress', 'complete', 'draft']),
+  "mode": zod.enum(['simulation', 'local_fixture', 'authorized_target']),
+  "createdAt": zod.string(),
+  "progress": zod.number().int()
+})),
+  "modeLabel": zod.string(),
   "nextAction": zod.string()
 })
 
@@ -173,10 +215,41 @@ export const GetDashboardResponse = zod.object({
 export const ListValidationCasesResponseItem = zod.object({
   "id": zod.string(),
   "identity": zod.string(),
+  "requesterAlias": zod.string(),
   "owner": zod.string(),
+  "ownerAlias": zod.string(),
+  "resourceId": zod.string(),
   "policy": zod.string(),
   "expected": zod.string(),
   "observed": zod.string(),
+  "status": zod.enum(['not_run', 'passed', 'failed', 'inconclusive']),
+  "lastRunId": zod.string().optional(),
+  "lastRunAt": zod.string().optional(),
+  "latestRun": zod.union([zod.object({
+  "id": zod.string(),
+  "matrixId": zod.string(),
+  "caseId": zod.string(),
+  "identity": zod.string(),
+  "identityAlias": zod.string(),
+  "owner": zod.string(),
+  "resourceId": zod.string(),
+  "policy": zod.string(),
+  "policyVersion": zod.string(),
+  "status": zod.enum(['passed', 'failed', 'inconclusive']),
+  "outcome": zod.enum(['passed', 'policy_failed', 'execution_error']),
+  "expectedResponse": zod.string(),
+  "actualResponse": zod.string(),
+  "protectedContentReturned": zod.boolean(),
+  "assertions": zod.array(zod.object({
+  "label": zod.string(),
+  "status": zod.enum(['passed', 'failed', 'error']),
+  "detail": zod.string()
+})),
+  "request": zod.string(),
+  "response": zod.string(),
+  "origin": zod.string(),
+  "createdAt": zod.string()
+}),zod.null()]).optional(),
   "vulnerable": zod.boolean()
 })
 export const ListValidationCasesResponse = zod.array(ListValidationCasesResponseItem)
@@ -191,13 +264,63 @@ export const RunValidationBody = zod.object({
 
 export const RunValidationResponse = zod.object({
   "id": zod.string(),
+  "matrixId": zod.string(),
   "caseId": zod.string(),
+  "identity": zod.string(),
+  "identityAlias": zod.string(),
+  "owner": zod.string(),
+  "resourceId": zod.string(),
+  "policy": zod.string(),
+  "policyVersion": zod.string(),
   "status": zod.enum(['passed', 'failed', 'inconclusive']),
-  "assertions": zod.array(zod.string()),
+  "outcome": zod.enum(['passed', 'policy_failed', 'execution_error']),
+  "expectedResponse": zod.string(),
+  "actualResponse": zod.string(),
+  "protectedContentReturned": zod.boolean(),
+  "assertions": zod.array(zod.object({
+  "label": zod.string(),
+  "status": zod.enum(['passed', 'failed', 'error']),
+  "detail": zod.string()
+})),
   "request": zod.string(),
   "response": zod.string(),
   "origin": zod.string(),
   "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Run the complete four-case authorization matrix
+ */
+export const RunValidationMatrixResponse = zod.object({
+  "id": zod.string(),
+  "policyVersion": zod.string(),
+  "createdAt": zod.string(),
+  "runs": zod.array(zod.object({
+  "id": zod.string(),
+  "matrixId": zod.string(),
+  "caseId": zod.string(),
+  "identity": zod.string(),
+  "identityAlias": zod.string(),
+  "owner": zod.string(),
+  "resourceId": zod.string(),
+  "policy": zod.string(),
+  "policyVersion": zod.string(),
+  "status": zod.enum(['passed', 'failed', 'inconclusive']),
+  "outcome": zod.enum(['passed', 'policy_failed', 'execution_error']),
+  "expectedResponse": zod.string(),
+  "actualResponse": zod.string(),
+  "protectedContentReturned": zod.boolean(),
+  "assertions": zod.array(zod.object({
+  "label": zod.string(),
+  "status": zod.enum(['passed', 'failed', 'error']),
+  "detail": zod.string()
+})),
+  "request": zod.string(),
+  "response": zod.string(),
+  "origin": zod.string(),
+  "createdAt": zod.string()
+}))
 })
 
 
@@ -248,11 +371,17 @@ export const GetFindingResponse = zod.object({
   "findingId": zod.string(),
   "testId": zod.string(),
   "runId": zod.string(),
+  "verificationId": zod.string().optional(),
+  "assessmentId": zod.string(),
+  "identityAlias": zod.string(),
+  "resourceId": zod.string(),
   "environment": zod.string(),
   "origin": zod.string(),
   "timestamp": zod.string(),
   "revision": zod.string(),
   "redaction": zod.string(),
+  "expected": zod.string(),
+  "observed": zod.string(),
   "request": zod.string(),
   "response": zod.string(),
   "assertions": zod.array(zod.string())
@@ -261,10 +390,23 @@ export const GetFindingResponse = zod.object({
   "id": zod.string(),
   "findingId": zod.string(),
   "status": zod.enum(['verified_fixed', 'still_reproducible', 'inconclusive']),
-  "assertions": zod.array(zod.string()),
+  "originalRunIds": zod.array(zod.string()),
+  "retestRunIds": zod.array(zod.string()),
+  "policyVersion": zod.string(),
+  "assertions": zod.array(zod.object({
+  "label": zod.string(),
+  "status": zod.enum(['passed', 'failed', 'error']),
+  "detail": zod.string()
+})),
   "createdAt": zod.string(),
   "origin": zod.string()
-}))
+})),
+  "remediationState": zod.enum(['proposed', 'applied', 'ready_for_retest']).optional(),
+  "remediationAppliedAt": zod.string().optional(),
+  "environment": zod.string().optional(),
+  "assessmentId": zod.string().optional(),
+  "policyVersion": zod.string().optional(),
+  "disclosure": zod.string().optional()
 }))
 
 
@@ -276,11 +418,17 @@ export const ListEvidenceResponseItem = zod.object({
   "findingId": zod.string(),
   "testId": zod.string(),
   "runId": zod.string(),
+  "verificationId": zod.string().optional(),
+  "assessmentId": zod.string(),
+  "identityAlias": zod.string(),
+  "resourceId": zod.string(),
   "environment": zod.string(),
   "origin": zod.string(),
   "timestamp": zod.string(),
   "revision": zod.string(),
   "redaction": zod.string(),
+  "expected": zod.string(),
+  "observed": zod.string(),
   "request": zod.string(),
   "response": zod.string(),
   "assertions": zod.array(zod.string())
@@ -313,7 +461,14 @@ export const RunRetestResponse = zod.object({
   "id": zod.string(),
   "findingId": zod.string(),
   "status": zod.enum(['verified_fixed', 'still_reproducible', 'inconclusive']),
-  "assertions": zod.array(zod.string()),
+  "originalRunIds": zod.array(zod.string()),
+  "retestRunIds": zod.array(zod.string()),
+  "policyVersion": zod.string(),
+  "assertions": zod.array(zod.object({
+  "label": zod.string(),
+  "status": zod.enum(['passed', 'failed', 'error']),
+  "detail": zod.string()
+})),
   "createdAt": zod.string(),
   "origin": zod.string()
 })
@@ -326,12 +481,149 @@ export const GenerateReportBody = zod.object({
   "format": zod.enum(['html', 'json', 'sarif', 'pdf'])
 })
 
+
+
+
+
+
 export const GenerateReportResponse = zod.object({
   "id": zod.string(),
   "format": zod.string(),
   "status": zod.string(),
   "disclosure": zod.string(),
-  "generatedAt": zod.string()
+  "generatedAt": zod.string(),
+  "assessment": zod.object({
+  "name": zod.string().min(1),
+  "target": zod.string().min(1),
+  "environment": zod.enum(['demo', 'local', 'authorized']),
+  "authorization": zod.string().min(1)
+}).and(zod.object({
+  "id": zod.string(),
+  "status": zod.enum(['in_progress', 'complete', 'draft']),
+  "mode": zod.enum(['simulation', 'local_fixture', 'authorized_target']),
+  "createdAt": zod.string(),
+  "progress": zod.number().int()
+})).optional(),
+  "modeLabel": zod.string().optional(),
+  "coverage": zod.array(zod.object({
+  "area": zod.string(),
+  "status": zod.enum(['planned', 'not_assessed', 'in_progress', 'demonstrated_fixture']),
+  "plannedChecks": zod.number().int(),
+  "completedChecks": zod.number().int(),
+  "evidence": zod.number().int(),
+  "limitations": zod.string()
+})).optional(),
+  "limitations": zod.string().optional(),
+  "findings": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "category": zod.string(),
+  "component": zod.string(),
+  "severity": zod.enum(['critical', 'high', 'medium', 'low']),
+  "state": zod.enum(['candidate', 'confirmed', 'rejected', 'inconclusive']),
+  "origin": zod.string(),
+  "updatedAt": zod.string()
+}).and(zod.object({
+  "description": zod.string(),
+  "rationale": zod.string(),
+  "prerequisites": zod.string(),
+  "expected": zod.string(),
+  "actual": zod.string(),
+  "steps": zod.array(zod.string()),
+  "cause": zod.string(),
+  "impact": zod.string(),
+  "remediation": zod.string(),
+  "evidence": zod.array(zod.object({
+  "id": zod.string(),
+  "findingId": zod.string(),
+  "testId": zod.string(),
+  "runId": zod.string(),
+  "verificationId": zod.string().optional(),
+  "assessmentId": zod.string(),
+  "identityAlias": zod.string(),
+  "resourceId": zod.string(),
+  "environment": zod.string(),
+  "origin": zod.string(),
+  "timestamp": zod.string(),
+  "revision": zod.string(),
+  "redaction": zod.string(),
+  "expected": zod.string(),
+  "observed": zod.string(),
+  "request": zod.string(),
+  "response": zod.string(),
+  "assertions": zod.array(zod.string())
+})),
+  "verification": zod.array(zod.object({
+  "id": zod.string(),
+  "findingId": zod.string(),
+  "status": zod.enum(['verified_fixed', 'still_reproducible', 'inconclusive']),
+  "originalRunIds": zod.array(zod.string()),
+  "retestRunIds": zod.array(zod.string()),
+  "policyVersion": zod.string(),
+  "assertions": zod.array(zod.object({
+  "label": zod.string(),
+  "status": zod.enum(['passed', 'failed', 'error']),
+  "detail": zod.string()
+})),
+  "createdAt": zod.string(),
+  "origin": zod.string()
+})),
+  "remediationState": zod.enum(['proposed', 'applied', 'ready_for_retest']).optional(),
+  "remediationAppliedAt": zod.string().optional(),
+  "environment": zod.string().optional(),
+  "assessmentId": zod.string().optional(),
+  "policyVersion": zod.string().optional(),
+  "disclosure": zod.string().optional()
+}))).optional(),
+  "evidence": zod.array(zod.object({
+  "id": zod.string(),
+  "findingId": zod.string(),
+  "testId": zod.string(),
+  "runId": zod.string(),
+  "verificationId": zod.string().optional(),
+  "assessmentId": zod.string(),
+  "identityAlias": zod.string(),
+  "resourceId": zod.string(),
+  "environment": zod.string(),
+  "origin": zod.string(),
+  "timestamp": zod.string(),
+  "revision": zod.string(),
+  "redaction": zod.string(),
+  "expected": zod.string(),
+  "observed": zod.string(),
+  "request": zod.string(),
+  "response": zod.string(),
+  "assertions": zod.array(zod.string())
+})).optional(),
+  "remediation": zod.object({
+  "findingId": zod.string(),
+  "status": zod.enum(['proposed', 'applied', 'ready_for_retest']),
+  "message": zod.string()
+}).optional(),
+  "verification": zod.union([zod.object({
+  "id": zod.string(),
+  "findingId": zod.string(),
+  "status": zod.enum(['verified_fixed', 'still_reproducible', 'inconclusive']),
+  "originalRunIds": zod.array(zod.string()),
+  "retestRunIds": zod.array(zod.string()),
+  "policyVersion": zod.string(),
+  "assertions": zod.array(zod.object({
+  "label": zod.string(),
+  "status": zod.enum(['passed', 'failed', 'error']),
+  "detail": zod.string()
+})),
+  "createdAt": zod.string(),
+  "origin": zod.string()
+}),zod.null()]).optional()
+})
+
+
+/**
+ * @summary Reset the synthetic assessment state
+ */
+export const ResetDemoResponse = zod.object({
+  "status": zod.string(),
+  "message": zod.string()
 })
 
 

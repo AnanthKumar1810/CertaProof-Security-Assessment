@@ -11,11 +11,17 @@ export interface Evidence {
   findingId: string;
   testId: string;
   runId: string;
+  verificationId?: string;
+  assessmentId: string;
+  identityAlias: string;
+  resourceId: string;
   environment: string;
   origin: string;
   timestamp: string;
   revision: string;
   redaction: string;
+  expected: string;
+  observed: string;
   request: string;
   response: string;
   assertions: string[];

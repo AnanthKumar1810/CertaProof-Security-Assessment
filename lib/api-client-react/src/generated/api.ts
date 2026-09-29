@@ -31,8 +31,10 @@ import type {
   Remediation,
   Report,
   ReportInput,
+  ResetResponse,
   ValidationCase,
   ValidationInput,
+  ValidationMatrix,
   ValidationRun,
   Verification,
   Workspace
@@ -704,6 +706,80 @@ export const useRunValidation = <TError = ErrorType<unknown>,
       return useMutation(getRunValidationMutationOptions(options));
     }
 
+export const getRunValidationMatrixUrl = () => {
+
+
+
+
+  return `/api/validation/matrix`
+}
+
+/**
+ * @summary Run the complete four-case authorization matrix
+ */
+export const runValidationMatrix = async ( options?: Parameters<typeof customFetch>[1]): Promise<ValidationMatrix> => {
+
+  return customFetch<ValidationMatrix>(getRunValidationMatrixUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRunValidationMatrixMutationKey = () => ['runValidationMatrix'] as const;
+
+export const getRunValidationMatrixMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runValidationMatrix>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof runValidationMatrix>>, TError,void, TContext> => {
+
+const mutationKey = getRunValidationMatrixMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof runValidationMatrix>>, void> = () => {
+
+
+          return  runValidationMatrix(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RunValidationMatrixMutationResult = NonNullable<Awaited<ReturnType<typeof runValidationMatrix>>>
+
+    export type RunValidationMatrixMutationError = ErrorType<unknown>
+
+
+    /**
+ * @summary Run the complete four-case authorization matrix
+ */
+export const useRunValidationMatrix = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runValidationMatrix>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof runValidationMatrix>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getRunValidationMatrixMutationOptions(options));
+    }
+
 export const getListFindingsUrl = () => {
 
 
@@ -1169,5 +1245,79 @@ export const useGenerateReport = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getGenerateReportMutationOptions(options));
+    }
+
+export const getResetDemoUrl = () => {
+
+
+
+
+  return `/api/demo/reset`
+}
+
+/**
+ * @summary Reset the synthetic assessment state
+ */
+export const resetDemo = async ( options?: Parameters<typeof customFetch>[1]): Promise<ResetResponse> => {
+
+  return customFetch<ResetResponse>(getResetDemoUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getResetDemoMutationKey = () => ['resetDemo'] as const;
+
+export const getResetDemoMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetDemo>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof resetDemo>>, TError,void, TContext> => {
+
+const mutationKey = getResetDemoMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resetDemo>>, void> = () => {
+
+
+          return  resetDemo(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResetDemoMutationResult = NonNullable<Awaited<ReturnType<typeof resetDemo>>>
+
+    export type ResetDemoMutationError = ErrorType<unknown>
+
+
+    /**
+ * @summary Reset the synthetic assessment state
+ */
+export const useResetDemo = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetDemo>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof resetDemo>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getResetDemoMutationOptions(options));
     }
 
